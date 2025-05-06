@@ -46,7 +46,7 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white">
+    <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
       <div className="p-6 space-y-6">
         <div className="space-y-4">
           {/* User Type Selection */}
@@ -186,13 +186,13 @@ export function RegisterForm() {
         </Button>
 
         <div className="pt-4 border-t border-gray-200">
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-center text-xs text-gray-700">
             After registration, an admin will verify your membership before you can access the system.
           </p>
         </div>
 
         <div className="text-center text-sm">
-          <span className="text-gray-500">Already have an account?</span>{" "}
+          <span className="text-gray-700">Already have an account?</span>{" "}
           <Link href="#" className="text-[#09331f] hover:underline font-medium">
             Sign in
           </Link>

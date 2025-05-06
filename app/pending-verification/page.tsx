@@ -1,14 +1,16 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { GalleryBackground } from "@/components/ui/gallery-background"
+import { WhiteLogo } from "@/components/ui/white-logo"
 
 export default function PendingVerificationPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen">
+      <GalleryBackground />
+      <div className="flex min-h-screen flex-col relative z-10">
         {/* Header with DLSU Chorale branding */}
-        <header className="bg-[#09331f] py-6">
+        <header className="bg-[#09331f] py-6 shadow-md">
           <div className="container mx-auto px-4">
             <h1 className="text-2xl font-bold text-white">DLSU Chorale</h1>
           </div>
@@ -16,10 +18,10 @@ export default function PendingVerificationPage() {
 
         {/* Main content */}
         <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="mx-auto w-full max-w-md border-2 border-[#09331f]/20 shadow-lg bg-white">
+          <Card className="mx-auto w-full max-w-md border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
             <CardHeader className="border-b border-gray-100 pb-7">
               <div className="flex justify-center mb-4">
-                <Image src="/images/dlsu-chorale-logo.png" alt="DLSU Chorale Logo" width={80} height={100} />
+                <WhiteLogo width={80} height={100} className="brightness-100 invert-0" />
               </div>
               <CardTitle className="text-center text-[#09331f] text-2xl">Verification Pending</CardTitle>
               <CardDescription className="text-center">Your account is awaiting admin verification</CardDescription>
@@ -65,7 +67,7 @@ export default function PendingVerificationPage() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-[#1B1B1B] py-4">
+        <footer className="bg-[#1B1B1B] py-4 shadow-inner">
           <div className="container mx-auto px-4 text-center text-white text-sm">
             &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
           </div>

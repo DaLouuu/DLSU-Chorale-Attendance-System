@@ -23,6 +23,9 @@ Continue building your app on:
 ## Things to Install
 
 npm install react@18 react-dom@18 date-fns@2.30.0
+
 npm install
+
 npm install --save-dev typescript tailwindcss postcss autoprefixer
+
 npm install next react react-dom

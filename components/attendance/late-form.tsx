@@ -16,7 +16,7 @@ export function LateForm() {
   const [lateReason, setLateReason] = useState("")
   const [lateDescription, setLateDescription] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault()
 
     // Validate form

@@ -29,3 +29,15 @@ npm install
 npm install --save-dev typescript tailwindcss postcss autoprefixer
 
 npm install next react react-dom
+
+## To Run
+
+npm run dev
+
+## Webpage Addresses
+Register Page:
+http://localhost:3000
+
+Attendance Excuse Form:
+http://localhost:3000/attendance-form
+

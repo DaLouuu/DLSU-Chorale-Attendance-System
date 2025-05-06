@@ -1,6 +1,4 @@
-# Google oauth registration
-
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+# DLSU Chorale Attendance System
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/dalouuus-projects/v0-google-oauth-registration)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/N9R8BPqtegI)
@@ -12,7 +10,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 ## Deployment
 
-Your project is live at:
+The project is live at:
 
 **[https://vercel.com/dalouuus-projects/v0-google-oauth-registration](https://vercel.com/dalouuus-projects/v0-google-oauth-registration)**
 
@@ -22,9 +20,9 @@ Continue building your app on:
 
 **[https://v0.dev/chat/projects/N9R8BPqtegI](https://v0.dev/chat/projects/N9R8BPqtegI)**
 
-## How It Works
+## Things to Install
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+npm install react@18 react-dom@18 date-fns@2.30.0
+npm install
+npm install --save-dev typescript tailwindcss postcss autoprefixer
+npm install next react react-dom

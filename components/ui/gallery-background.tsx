@@ -32,8 +32,8 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/75 z-10" />
+      {/* Dark overlay - reduced opacity to see photos better */}
+      <div className="absolute inset-0 bg-black/65 z-10" />
 
       {/* Images */}
       {images.map((src, index) => (
@@ -59,8 +59,8 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
       <div className="absolute top-1/3 right-20 text-white/10 text-6xl z-20 transform rotate-45">♩</div>
       <div className="absolute bottom-1/3 left-20 text-white/10 text-9xl z-20 transform -rotate-6">♬</div>
 
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#09331f]/60 to-transparent z-20" />
+      {/* Subtle black gradient overlay instead of green */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-20" />
     </div>
   )
 }

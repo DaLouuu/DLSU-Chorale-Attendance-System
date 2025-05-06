@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { GalleryBackground } from "@/components/ui/gallery-background"
-import { WhiteLogo } from "@/components/ui/white-logo"
+import Image from "next/image"
 
 export default function PendingVerificationPage() {
   return (
@@ -21,7 +21,9 @@ export default function PendingVerificationPage() {
           <Card className="mx-auto w-full max-w-md border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
             <CardHeader className="border-b border-gray-100 pb-7">
               <div className="flex justify-center mb-4">
-                <WhiteLogo width={80} height={100} className="brightness-100 invert-0" />
+                <div className="relative" style={{ width: 80, height: 100 }}>
+                  <Image src="/images/dlsu-chorale-logo.png" alt="DLSU Chorale Logo" fill className="object-contain" />
+                </div>
               </div>
               <CardTitle className="text-center text-[#09331f] text-2xl">Verification Pending</CardTitle>
               <CardDescription className="text-center">Your account is awaiting admin verification</CardDescription>

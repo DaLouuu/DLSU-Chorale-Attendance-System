@@ -2,7 +2,7 @@ import { RegisterForm } from "@/components/auth/register-form"
 import { GalleryBackground } from "@/components/ui/gallery-background"
 import { WhiteLogo } from "@/components/ui/white-logo"
 
-export default function RegisterPage() {
+export default function HomePage() {
   return (
     <div className="min-h-screen">
       <GalleryBackground />

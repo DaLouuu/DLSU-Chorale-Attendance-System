@@ -10,14 +10,14 @@ export default function PendingVerificationPage() {
       <GalleryBackground />
       <div className="flex min-h-screen flex-col relative z-10">
         {/* Header with DLSU Chorale branding */}
-        <header className="bg-[#09331f] py-6 shadow-md">
+        <header className="bg-[#09331f] py-8 shadow-md">
           <div className="container mx-auto px-4">
             <h1 className="text-2xl font-bold text-white">DLSU Chorale</h1>
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 flex items-center justify-center p-4">
+        {/* Main content - increased padding top and bottom */}
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <Card className="mx-auto w-full max-w-md border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
             <CardHeader className="border-b border-gray-100 pb-7">
               <div className="flex justify-center mb-4">
@@ -66,8 +66,8 @@ export default function PendingVerificationPage() {
           </Card>
         </main>
 
-        {/* Footer */}
-        <footer className="bg-[#1B1B1B] py-4 shadow-inner">
+        {/* Footer - increased padding */}
+        <footer className="bg-[#1B1B1B] py-6 shadow-inner">
           <div className="container mx-auto px-4 text-center text-white text-sm">
             &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
           </div>

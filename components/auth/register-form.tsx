@@ -47,10 +47,10 @@ export function RegisterForm() {
 
   return (
     <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
-      <div className="p-6 space-y-6">
-        <div className="space-y-4">
+      <div className="p-8 space-y-7">
+        <div className="space-y-5">
           {/* User Type Selection */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-medium text-[#1B1B1B]">I am registering as:</Label>
             <RadioGroup value={userType} onValueChange={handleUserTypeChange} className="flex gap-4">
               <div className="flex items-center space-x-2">
@@ -66,7 +66,7 @@ export function RegisterForm() {
 
           {/* Admin Role Selection - Only show if admin is selected */}
           {userType === "admin" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="admin-role" className="text-sm font-medium text-[#1B1B1B]">
                 Admin Role:
               </Label>
@@ -86,7 +86,7 @@ export function RegisterForm() {
 
           {/* Member Type Selection - Only show if member is selected */}
           {userType === "member" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label className="text-sm font-medium text-[#1B1B1B]">Member Type:</Label>
               <RadioGroup
                 value={memberType}
@@ -112,7 +112,7 @@ export function RegisterForm() {
 
           {/* Voice Section - Only show if performing member is selected */}
           {userType === "member" && memberType === "performing" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="voice-section" className="text-sm font-medium text-[#1B1B1B]">
                 Voice Section:
               </Label>
@@ -132,7 +132,7 @@ export function RegisterForm() {
 
           {/* Committee Selection - Only show if non-performing member is selected */}
           {userType === "member" && memberType === "non-performing" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="committee" className="text-sm font-medium text-[#1B1B1B]">
                 Committee:
               </Label>
@@ -155,7 +155,7 @@ export function RegisterForm() {
         <Button
           onClick={handleGoogleSignIn}
           disabled={!isFormValid() || isLoading}
-          className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white"
+          className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white mt-6"
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export function RegisterForm() {
           )}
         </Button>
 
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-5 border-t border-gray-200 mt-4">
           <p className="text-center text-xs text-gray-700">
             After registration, an admin will verify your membership before you can access the system.
           </p>

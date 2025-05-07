@@ -12,7 +12,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 The project is live at:
 
-**[https://vercel.com/dalouuus-projects/v0-google-oauth-registration](https://vercel.com/dalouuus-projects/v0-google-oauth-registration)**
+**[https://dlsu-chorale-attendance-system.vercel.app/](https://dlsu-chorale-attendance-system.vercel.app/)**
 
 ## Build your app
 

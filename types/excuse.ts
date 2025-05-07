@@ -18,6 +18,7 @@ export interface ExcuseItem {
     type: "ABSENT" | "LATE"
     date: string
     status: "APPROVED" | "DECLINED"
+    declineReason?: string
     profileImage?: string
   }
   

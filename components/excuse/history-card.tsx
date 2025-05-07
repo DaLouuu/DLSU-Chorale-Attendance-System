@@ -116,7 +116,13 @@ export function HistoryCard({ historyItem, onEditApproval }: HistoryCardProps) {
                     {historyItem.status}
                   </span>
                 </p>
-                <p className="text-sm">
+                {historyItem.status === "DECLINED" && historyItem.declineReason && (
+                  <div className="mt-2 rounded-md bg-red-50 p-2 text-sm text-red-800">
+                    <p className="font-medium">Decline Reason:</p>
+                    <p>{historyItem.declineReason}</p>
+                  </div>
+                )}
+                <p className="mt-2 text-sm">
                   <span className="font-medium">Processed on:</span> {new Date().toLocaleDateString()}
                 </p>
               </div>

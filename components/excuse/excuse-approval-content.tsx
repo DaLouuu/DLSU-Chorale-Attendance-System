@@ -5,11 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExcuseList } from "@/components/excuse/excuse-list"
 import { HistoryList } from "@/components/excuse/history-list"
 import { VoiceFilter } from "@/components/excuse/voice-filter"
+import { DeclineReasonDialog } from "@/components/excuse/decline-reason-dialog"
 import type { ExcuseItem, HistoryItem } from "@/types/excuse"
 
 export function ExcuseApprovalContent() {
   const [activeTab, setActiveTab] = useState("pending")
   const [activeVoice, setActiveVoice] = useState<string | null>(null)
+
+  // Decline dialog state
+  const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false)
+  const [excuseToDecline, setExcuseToDecline] = useState<ExcuseItem | null>(null)
+  const [historyItemToDecline, setHistoryItemToDecline] = useState<HistoryItem | null>(null)
 
   // Pending excuses data
   const [excuses, setExcuses] = useState<ExcuseItem[]>([
@@ -91,6 +97,7 @@ export function ExcuseApprovalContent() {
       type: "ABSENT",
       date: "Tuesday, September 21, 2004",
       status: "DECLINED",
+      declineReason: "Insufficient documentation provided",
       profileImage: "/images/profile-1.jpg",
     },
     {
@@ -121,6 +128,7 @@ export function ExcuseApprovalContent() {
       type: "LATE",
       date: "Tuesday, September 21, 2004",
       status: "DECLINED",
+      declineReason: "Pattern of tardiness",
       profileImage: "/images/profile-1.jpg",
     },
     {
@@ -141,6 +149,7 @@ export function ExcuseApprovalContent() {
       type: "LATE",
       date: "Thursday, September 23, 2004",
       status: "DECLINED",
+      declineReason: "No valid reason provided",
       profileImage: "/images/profile-1.jpg",
     },
     {
@@ -175,35 +184,67 @@ export function ExcuseApprovalContent() {
     }
   }
 
-  const handleDecline = (id: string) => {
-    // Move the excuse from pending to history with DECLINED status
-    const excuseToMove = excuses.find((excuse) => excuse.id === id)
-    if (excuseToMove) {
+  const handleDeclineClick = (id: string) => {
+    // Find the excuse and open the decline dialog
+    const excuse = excuses.find((excuse) => excuse.id === id)
+    if (excuse) {
+      setExcuseToDecline(excuse)
+      setHistoryItemToDecline(null)
+      setIsDeclineDialogOpen(true)
+    }
+  }
+
+  const handleDeclineConfirm = (reason: string) => {
+    if (excuseToDecline) {
+      // Move the excuse from pending to history with DECLINED status
       const newHistoryItem: HistoryItem = {
         id: `h${Date.now()}`, // Generate a new ID
-        name: excuseToMove.name,
-        voiceSection: excuseToMove.voiceSection,
-        voiceNumber: excuseToMove.voiceNumber,
-        type: excuseToMove.type,
-        date: excuseToMove.date,
+        name: excuseToDecline.name,
+        voiceSection: excuseToDecline.voiceSection,
+        voiceNumber: excuseToDecline.voiceNumber,
+        type: excuseToDecline.type,
+        date: excuseToDecline.date,
         status: "DECLINED",
-        profileImage: excuseToMove.profileImage,
+        declineReason: reason || undefined,
+        profileImage: excuseToDecline.profileImage,
       }
 
       setHistoryItems([newHistoryItem, ...historyItems])
-      setExcuses(excuses.filter((excuse) => excuse.id !== id))
+      setExcuses(excuses.filter((excuse) => excuse.id !== excuseToDecline.id))
+    } else if (historyItemToDecline) {
+      // Update the history item status to DECLINED
+      setHistoryItems(
+        historyItems.map((item) =>
+          item.id === historyItemToDecline.id
+            ? { ...item, status: "DECLINED", declineReason: reason || undefined }
+            : item,
+        ),
+      )
     }
+
+    // Close the dialog and reset state
+    setIsDeclineDialogOpen(false)
+    setExcuseToDecline(null)
+    setHistoryItemToDecline(null)
   }
 
   const handleEditApproval = (id: string) => {
     // Find the history item
     const historyItem = historyItems.find((item) => item.id === id)
     if (historyItem) {
-      // Toggle the status
-      const newStatus = historyItem.status === "APPROVED" ? "DECLINED" : "APPROVED"
-
-      // Update the history items
-      setHistoryItems(historyItems.map((item) => (item.id === id ? { ...item, status: newStatus } : item)))
+      if (historyItem.status === "APPROVED") {
+        // If changing from APPROVED to DECLINED, show the decline dialog
+        setHistoryItemToDecline(historyItem)
+        setExcuseToDecline(null)
+        setIsDeclineDialogOpen(true)
+      } else {
+        // If changing from DECLINED to APPROVED, just update the status
+        setHistoryItems(
+          historyItems.map((item) =>
+            item.id === id ? { ...item, status: "APPROVED", declineReason: undefined } : item,
+          ),
+        )
+      }
     }
   }
 
@@ -238,13 +279,29 @@ export function ExcuseApprovalContent() {
         </div>
 
         <TabsContent value="pending" className="m-0">
-          <ExcuseList excuses={filteredExcuses} onApprove={handleApprove} onDecline={handleDecline} />
+          <ExcuseList excuses={filteredExcuses} onApprove={handleApprove} onDecline={handleDeclineClick} />
         </TabsContent>
 
         <TabsContent value="history" className="m-0">
           <HistoryList historyItems={filteredHistoryItems} onEditApproval={handleEditApproval} />
         </TabsContent>
       </Tabs>
+
+      {/* Decline Reason Dialog */}
+      {(excuseToDecline || historyItemToDecline) && (
+        <DeclineReasonDialog
+          isOpen={isDeclineDialogOpen}
+          onClose={() => {
+            setIsDeclineDialogOpen(false)
+            setExcuseToDecline(null)
+            setHistoryItemToDecline(null)
+          }}
+          onConfirm={handleDeclineConfirm}
+          excuseName={excuseToDecline?.name || historyItemToDecline?.name || ""}
+          excuseType={excuseToDecline?.type || historyItemToDecline?.type || ""}
+          excuseDate={excuseToDecline?.date || historyItemToDecline?.date || ""}
+        />
+      )}
     </div>
   )
 }

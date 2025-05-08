@@ -17,7 +17,7 @@ export interface Database {
           committee: string | null
           verification: boolean
           section: string | null
-          is_admin: boolean
+          admin_or_not: boolean
         }
         Insert: {
           id?: number
@@ -26,7 +26,7 @@ export interface Database {
           committee?: string | null
           verification?: boolean
           section?: string | null
-          is_admin?: boolean
+          admin_or_not?: boolean
         }
         Update: {
           id?: number
@@ -35,7 +35,7 @@ export interface Database {
           committee?: string | null
           verification?: boolean
           section?: string | null
-          is_admin?: boolean
+          admin_or_not?: boolean
         }
       }
       AttendanceLogs: {

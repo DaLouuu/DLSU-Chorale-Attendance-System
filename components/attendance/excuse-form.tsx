@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { AbsentForm } from "@/components/attendance/absent-form"
-import { LateForm } from "@/components/attendance/late-form"
+import { SteppingOutForm } from "@/components/attendance/stepping-out-form"
 
 export function AttendanceExcuseForm() {
   const [activeTab, setActiveTab] = useState("absent")
@@ -18,13 +18,13 @@ export function AttendanceExcuseForm() {
               value="absent"
               className="rounded-none data-[state=active]:bg-white data-[state=active]:text-[#09331f] data-[state=active]:font-medium data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#09331f]"
             >
-              Absent
+              Absent / Late
             </TabsTrigger>
             <TabsTrigger
-              value="late"
+              value="stepping-out"
               className="rounded-none data-[state=active]:bg-white data-[state=active]:text-[#09331f] data-[state=active]:font-medium data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#09331f]"
             >
-              Late
+              Stepping Out
             </TabsTrigger>
           </TabsList>
 
@@ -32,8 +32,8 @@ export function AttendanceExcuseForm() {
             <AbsentForm />
           </TabsContent>
 
-          <TabsContent value="late" className="p-6 space-y-6">
-            <LateForm />
+          <TabsContent value="stepping-out" className="p-6 space-y-6">
+            <SteppingOutForm />
           </TabsContent>
         </Tabs>
       </CardContent>

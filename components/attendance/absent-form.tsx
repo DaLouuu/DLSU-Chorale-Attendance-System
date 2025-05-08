@@ -15,7 +15,7 @@ export function AbsentForm() {
   const [absentReason, setAbsentReason] = useState("")
   const [absentDescription, setAbsentDescription] = useState("")
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
 
     // Validate form

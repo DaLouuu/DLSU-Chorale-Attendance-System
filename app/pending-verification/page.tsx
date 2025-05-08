@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { GalleryBackground } from "@/components/ui/gallery-background"
 import Image from "next/image"
+import { ArrowLeft } from "lucide-react"
 
 export default function PendingVerificationPage() {
   return (
@@ -11,7 +12,13 @@ export default function PendingVerificationPage() {
       <div className="flex min-h-screen flex-col relative z-10">
         {/* Header with DLSU Chorale branding */}
         <header className="bg-[#09331f] py-8 shadow-md">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 flex items-center">
+            <Button variant="ghost" size="sm" asChild className="mr-4 text-white hover:bg-[#09331f]/50">
+              <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Link>
+            </Button>
             <h1 className="text-2xl font-bold text-white">DLSU Chorale</h1>
           </div>
         </header>

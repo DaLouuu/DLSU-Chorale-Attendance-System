@@ -4,6 +4,8 @@ import Link from "next/link"
 import { PageHeader } from "@/components/layout/page-header"
 import { PageFooter } from "@/components/layout/page-footer"
 import { AttendanceExcuseForm } from "@/components/attendance/excuse-form"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 export default function AttendanceExcusePage() {
   return (
@@ -12,7 +14,16 @@ export default function AttendanceExcusePage() {
         <PageHeader />
 
         {/* Main content */}
-        <main className="flex-1 flex items-center justify-center p-4">
+        <main className="flex-1 flex flex-col items-center p-4">
+          <div className="w-full max-w-4xl">
+            <Button variant="ghost" size="sm" asChild className="mb-6">
+              <Link href="/attendance-overview">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Overview
+              </Link>
+            </Button>
+          </div>
+
           <div className="w-full max-w-md">
             <div className="flex flex-col items-center space-y-4 text-center mb-6">
               <Image
@@ -27,12 +38,6 @@ export default function AttendanceExcusePage() {
             </div>
 
             <AttendanceExcuseForm />
-
-            <div className="mt-4 text-center text-sm">
-              <Link href="#" className="text-[#09331f] hover:underline font-medium">
-                Back to Dashboard
-              </Link>
-            </div>
           </div>
         </main>
 

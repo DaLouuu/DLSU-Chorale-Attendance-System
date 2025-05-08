@@ -1,4 +1,5 @@
-import { RegisterForm } from "@/components/auth/register-form"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { GalleryBackground } from "@/components/ui/gallery-background"
 import { WhiteLogo } from "@/components/ui/white-logo"
 
@@ -14,19 +15,30 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Main content - increased padding top and bottom */}
+        {/* Main content */}
         <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md">
             <div className="flex flex-col items-center space-y-6 text-center mb-8">
               <WhiteLogo className="mb-2" />
-              <h1 className="text-3xl font-bold tracking-tight text-white">Create an account</h1>
-              <p className="text-sm text-white/80">Register with your Google account</p>
+              <h1 className="text-3xl font-bold tracking-tight text-white">DLSU Chorale Attendance System</h1>
+              <p className="text-sm text-white/80">Manage attendance, submit excuses, and more</p>
             </div>
-            <RegisterForm />
+
+            <div className="flex flex-col space-y-4">
+              <Button asChild className="w-full bg-white text-[#09331f] hover:bg-white/90">
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button
+                asChild
+                className="w-full bg-[#09331f]/20 text-white hover:bg-[#09331f]/30 border border-white/30"
+              >
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
           </div>
         </main>
 
-        {/* Footer - increased padding */}
+        {/* Footer */}
         <footer className="bg-[#1B1B1B] py-6 shadow-inner">
           <div className="container mx-auto px-4 text-center text-white text-sm">
             &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.

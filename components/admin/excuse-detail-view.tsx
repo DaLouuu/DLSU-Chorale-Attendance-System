@@ -61,41 +61,41 @@ export function ExcuseDetailView({ excuse }) {
   const colors = statusColors[status]
 
   return (
-    <div className="space-y-4 py-2">
+    <div className="space-y-3 py-2">
       <div className="flex items-center gap-3">
-        <Avatar className="h-14 w-14 border border-gray-200">
+        <Avatar className="h-12 w-12 border border-gray-200">
           <AvatarImage src="/images/profile-1.jpg" alt={excuse.name} />
           <AvatarFallback>{excuse.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div>
-          <h3 className="text-lg font-medium">{excuse.name}</h3>
-          <p className="text-sm text-gray-500 capitalize">
+          <h3 className="text-base md:text-lg font-medium">{excuse.name}</h3>
+          <p className="text-xs md:text-sm text-gray-500 capitalize">
             {excuse.voiceSection} {excuse.voiceNumber}
           </p>
         </div>
       </div>
 
-      <div className="rounded-md bg-gray-50 p-4 space-y-3">
+      <div className="rounded-md bg-gray-50 p-3 md:p-4 space-y-2 md:space-y-3">
         <div className="flex justify-between items-center">
           <div>
             <Badge
               className={`
-                ${excuse.type === "ABSENT" ? "bg-red-100 text-red-800 hover:bg-red-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}
-                font-medium py-1 px-3
-              `}
+            ${excuse.type === "ABSENT" ? "bg-red-100 text-red-800 hover:bg-red-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}
+            font-medium py-0.5 md:py-1 px-2 md:px-3 text-xs md:text-sm
+          `}
             >
               {excuse.type}
             </Badge>
           </div>
-          <Badge className={`${colors.badge} py-1 px-3`}>{status}</Badge>
+          <Badge className={`${colors.badge} py-0.5 md:py-1 px-2 md:px-3 text-xs md:text-sm`}>{status}</Badge>
         </div>
 
-        <p className="text-sm">
+        <p className="text-xs md:text-sm">
           <span className="font-medium">Date:</span> {format(excuse.date, "MMMM d, yyyy")}
         </p>
 
         {status === "DECLINED" && declineReason && (
-          <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-800">
+          <div className="mt-2 rounded-md bg-red-50 p-2 md:p-3 text-xs md:text-sm text-red-800">
             <p className="font-medium">Decline Reason:</p>
             <p>{declineReason}</p>
           </div>
@@ -103,22 +103,22 @@ export function ExcuseDetailView({ excuse }) {
       </div>
 
       {status === "PENDING" && (
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 md:gap-3 pt-2">
           <Button
             onClick={handleApprove}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm"
             disabled={isSubmitting}
           >
-            <Check className="mr-2 h-4 w-4" />
+            <Check className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
             Approve
           </Button>
           <Button
             onClick={handleDeclineClick}
             variant="outline"
-            className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
+            className="flex-1 border-red-600 text-red-600 hover:bg-red-50 text-xs md:text-sm"
             disabled={isSubmitting}
           >
-            <X className="mr-2 h-4 w-4" />
+            <X className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
             Decline
           </Button>
         </div>

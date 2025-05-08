@@ -8,7 +8,6 @@ import { PageFooter } from "@/components/layout/page-footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExcuseDetailView } from "@/components/admin/excuse-detail-view"
@@ -122,9 +121,11 @@ export default function AttendanceOverviewPage() {
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
-        <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
+        <main className="flex-1 px-2 py-4 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
-            <h1 className="mb-6 text-2xl font-bold text-[#09331f] md:text-3xl">View Attendance Excuses</h1>
+            <h1 className="mb-4 md:mb-6 text-xl md:text-2xl lg:text-3xl font-bold text-[#09331f]">
+              View Attendance Excuses
+            </h1>
 
             {/* Calendar Navigation */}
             <div className="mb-6">
@@ -150,7 +151,7 @@ export default function AttendanceOverviewPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {currentWeek.map((day) => {
                   const isSelected = isSameDay(day, selectedDate)
                   const isToday = isSameDay(day, today)
@@ -161,23 +162,27 @@ export default function AttendanceOverviewPage() {
                       key={day.toString()}
                       variant="outline"
                       className={`
-                        flex flex-col items-center justify-center p-2 h-auto aspect-square relative
-                        ${isSelected ? "bg-[#09331f] text-white hover:bg-[#09331f]/90" : ""}
-                        ${isToday && !isSelected ? "border-[#09331f] border-2" : ""}
-                        ${isToday && isSelected ? "bg-[#09331f] text-white" : ""}
-                      `}
+      flex flex-col items-center justify-center p-1 md:p-2 h-auto aspect-square relative
+      ${isSelected ? "bg-[#09331f] text-white hover:bg-[#09331f]/90" : ""}
+      ${isToday && !isSelected ? "border-[#09331f] border-2" : ""}
+      ${isToday && isSelected ? "bg-[#09331f] text-white" : ""}
+    `}
                       onClick={() => setSelectedDate(day)}
                     >
-                      <span className="text-xs font-medium">{getDayAbbreviation(day)}</span>
-                      <span className="text-lg font-bold">{format(day, "d")}</span>
+                      <span className={`text-[10px] md:text-xs font-medium ${isSelected ? "text-white" : ""}`}>
+                        {getDayAbbreviation(day)}
+                      </span>
+                      <span className={`text-sm md:text-lg font-bold ${isSelected ? "text-white" : ""}`}>
+                        {format(day, "d")}
+                      </span>
                       {isToday && (
-                        <span className="absolute top-1 right-1 text-[10px] font-medium px-1 rounded-sm bg-white text-[#09331f]">
+                        <span className="absolute top-0 right-0 text-[8px] md:text-[10px] font-medium px-1 rounded-sm bg-white text-[#09331f]">
                           Today
                         </span>
                       )}
                       {excuseCount > 0 && (
                         <Badge
-                          className={`mt-1 text-xs ${isSelected ? "bg-white text-[#09331f]" : "bg-[#09331f] text-white"}`}
+                          className={`mt-0.5 md:mt-1 text-[8px] md:text-xs ${isSelected ? "bg-white text-[#09331f]" : "bg-[#09331f] text-white"}`}
                         >
                           {excuseCount}
                         </Badge>
@@ -197,73 +202,76 @@ export default function AttendanceOverviewPage() {
               </CardHeader>
 
               {/* Voice Filter */}
-              <div className="px-4 pt-4">
+              <div className="px-2 md:px-4 pt-4">
                 <Tabs defaultValue="all" value={activeVoice} onValueChange={setActiveVoice}>
                   <TabsList className="grid grid-cols-5 w-full bg-gray-100 p-1 rounded-lg">
                     <TabsTrigger
                       value="all"
-                      className="data-[state=active]:bg-[#09331f] data-[state=active]:text-white"
+                      className="text-xs md:text-sm px-1 md:px-2 data-[state=active]:bg-[#09331f] data-[state=active]:text-white"
                     >
                       All
                     </TabsTrigger>
                     <TabsTrigger
                       value="soprano"
-                      className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
+                      className="text-xs md:text-sm px-1 md:px-2 data-[state=active]:bg-pink-500 data-[state=active]:text-white"
                     >
-                      Soprano
+                      <span className="hidden md:inline">Soprano</span>
+                      <span className="md:hidden">S</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="alto"
-                      className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                      className="text-xs md:text-sm px-1 md:px-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
                     >
-                      Alto
+                      <span className="hidden md:inline">Alto</span>
+                      <span className="md:hidden">A</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="tenor"
-                      className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+                      className="text-xs md:text-sm px-1 md:px-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
                     >
-                      Tenor
+                      <span className="hidden md:inline">Tenor</span>
+                      <span className="md:hidden">T</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="bass"
-                      className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+                      className="text-xs md:text-sm px-1 md:px-2 data-[state=active]:bg-green-500 data-[state=active]:text-white"
                     >
-                      Bass
+                      <span className="hidden md:inline">Bass</span>
+                      <span className="md:hidden">B</span>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
 
               {/* Update the CardContent section to match the simpler format in the image */}
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 px-2 md:px-4">
                 {getFilteredExcuses().length > 0 ? (
                   <div className="space-y-2">
                     {getFilteredExcuses().map((excuse) => (
                       <div
                         key={excuse.id}
-                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                        className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg border border-gray-200"
                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src="/images/profile-1.jpg" alt={excuse.name} />
-                            <AvatarFallback>{excuse.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 font-medium text-center w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-sm">
+                            {excuse.name.charAt(0)}
+                          </div>
 
                           <div>
-                            <h3 className="font-medium text-gray-900">{excuse.name}</h3>
-                            <div className="text-sm text-gray-500 capitalize">
+                            <h3 className="font-medium text-gray-900 text-sm">{excuse.name}</h3>
+                            <div className="text-xs text-gray-500 capitalize">
                               {excuse.voiceSection} {excuse.voiceNumber}
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium text-gray-900">{excuse.type}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900 text-xs uppercase">{excuse.type}</span>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => viewExcuseDetails(excuse)}
-                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full"
+                            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full h-7 px-3"
                           >
                             View Details
                           </Button>
@@ -293,7 +301,7 @@ export default function AttendanceOverviewPage() {
       {/* Excuse Detail Dialog */}
       {selectedExcuse && (
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle>Excuse Details</DialogTitle>
             </DialogHeader>

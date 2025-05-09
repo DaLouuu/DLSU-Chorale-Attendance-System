@@ -99,9 +99,13 @@ export function RegisterForm() {
       if (data.url) {
         window.location.href = data.url
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during sign in:", error)
-      toast.error("Failed to sign in with Google")
+      if (error?.message?.includes("provider is not enabled")) {
+        toast.error("Google sign-in is not properly configured. Please contact the administrator.")
+      } else {
+        toast.error("Failed to sign in with Google")
+      }
       setIsLoading(false)
     }
   }

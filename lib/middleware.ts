@@ -30,7 +30,7 @@ export async function middleware(req: NextRequest) {
     // Get user data
     const { data: userData } = await supabase
       .from("Users")
-      .select("verification, is_admin")
+      .select("verification, user_type")
       .eq("id", session.user.id)
       .single()
 
@@ -47,7 +47,7 @@ export async function middleware(req: NextRequest) {
     const path = req.nextUrl.pathname
 
     // Admin routes
-    if (path.startsWith("/admin") && !userData.is_admin) {
+    if (path.startsWith("/admin") && userData.user_type !== "admin") {
       return NextResponse.redirect(new URL("/", req.url))
     }
   }

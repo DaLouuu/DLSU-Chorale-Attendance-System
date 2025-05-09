@@ -28,9 +28,8 @@ export default function AttendanceExcusePage() {
           return
         }
 
-        const { data: userData } = await supabase.from("Users").select("is_admin").eq("id", session.user.id).single()
-
-        setIsAdmin(userData?.is_admin || false)
+        const { data: userData } = await supabase.from("Users").select("user_type").eq("id", session.user.id).single()
+        setIsAdmin(userData?.user_type === "admin")
         setLoading(false)
       } catch (error) {
         console.error("Error checking user role:", error)

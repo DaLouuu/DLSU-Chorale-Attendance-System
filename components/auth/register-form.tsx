@@ -15,9 +15,10 @@ import { supabase } from "@/lib/supabase"
 export function RegisterForm() {
   const router = useRouter()
   const [userType, setUserType] = useState<"admin" | "member" | "">("")
-  const [adminRole, setAdminRole] = useState("")
-  const [isExecutiveBoard, setIsExecutiveBoard] = useState(false)
-  const [memberType, setMemberType] = useState("")
+  const [adminRole, setAdminRole] = useState<"conductor" | "performing" | "non-performing" | "">("")
+  const [memberType, setMemberType] = useState<"performing" | "non-performing" | "">("")
+  const [isExecBoard, setIsExecBoard] = useState(false)
+  const [isSecHead, setIsSecHead] = useState(false)
   const [committee, setCommittee] = useState("")
   const [voiceSection, setVoiceSection] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -33,7 +34,6 @@ export function RegisterForm() {
         return !!committee
       }
     }
-
     if (userType === "member") {
       if (!memberType) return false
       if (memberType === "performing") {
@@ -42,7 +42,6 @@ export function RegisterForm() {
         return !!committee
       }
     }
-
     return false
   }
 
@@ -51,7 +50,8 @@ export function RegisterForm() {
     setUserType(value as "admin" | "member" | "")
     setAdminRole("")
     setMemberType("")
-    setIsExecutiveBoard(false)
+    setIsExecBoard(false)
+    setIsSecHead(false)
     setVoiceSection("")
     setCommittee("")
   }
@@ -62,11 +62,8 @@ export function RegisterForm() {
       toast.error("Please fill in all required fields")
       return
     }
-
     setIsLoading(true)
-
     try {
-      // Proceed with Google sign in
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -77,25 +74,19 @@ export function RegisterForm() {
           },
         },
       })
-
-      if (error) {
-        throw error
-      }
-
-      // Store registration data in localStorage to retrieve after OAuth
+      if (error) throw error
       localStorage.setItem(
         "registrationData",
         JSON.stringify({
           userType,
           adminRole,
-          isExecutiveBoard,
+          memberType,
+          isExecBoard,
+          isSecHead,
           committee,
           voiceSection,
-          isPerforming: userType === "admin" ? adminRole === "performing" : memberType === "performing",
-        }),
+        })
       )
-
-      // Redirect to the OAuth URL
       if (data.url) {
         window.location.href = data.url
       }
@@ -141,19 +132,7 @@ export function RegisterForm() {
               </Label>
               <Select
                 value={adminRole}
-                onValueChange={(value) => {
-                  setAdminRole(value)
-                  // Reset performing status if conductor is selected
-                  if (value === "conductor") {
-                    setIsExecutiveBoard(false)
-                    setVoiceSection("")
-                    setCommittee("")
-                  } else if (value === "performing") {
-                    // Do nothing, keep other fields
-                  } else {
-                    setVoiceSection("")
-                  }
-                }}
+                onValueChange={setAdminRole}
                 disabled={isLoading}
               >
                 <SelectTrigger
@@ -171,14 +150,14 @@ export function RegisterForm() {
             </div>
           )}
 
-          {/* Executive Board Option - For admin only */}
+          {/* Executive Board Option - For admin only, not conductor */}
           {userType === "admin" && adminRole !== "conductor" && adminRole !== "" && (
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-executive-board"
-                  checked={isExecutiveBoard}
-                  onCheckedChange={(checked) => setIsExecutiveBoard(checked === true)}
+                  checked={isExecBoard}
+                  onCheckedChange={(checked: boolean) => setIsExecBoard(checked)}
                   disabled={isLoading}
                 />
                 <Label htmlFor="is-executive-board" className="dark:text-white">
@@ -196,12 +175,7 @@ export function RegisterForm() {
               </Label>
               <Select
                 value={memberType}
-                onValueChange={(value) => {
-                  setMemberType(value)
-                  if (value !== "performing") {
-                    setVoiceSection("")
-                  }
-                }}
+                onValueChange={setMemberType}
                 disabled={isLoading}
               >
                 <SelectTrigger

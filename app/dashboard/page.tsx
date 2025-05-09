@@ -27,13 +27,12 @@ import { useRouter } from "next/navigation"
 
 // Attendance status types
 type AttendanceStatus = "recorded" | "pending-retry" | "pending-down"
-type UserRole = "member" | "admin"
 
 export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>("recorded")
-  const [userRole, setUserRole] = useState<UserRole>("member")
+  const [userType, setUserType] = useState<"admin" | "member">("member")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -54,7 +53,7 @@ export default function DashboardPage() {
         // Get user data from Users table
         const { data: userData, error } = await supabase
           .from("Users")
-          .select("verification, is_admin")
+          .select("verification, user_type")
           .eq("id", session.user.id)
           .single()
 
@@ -70,8 +69,8 @@ export default function DashboardPage() {
           return
         }
 
-        // Set user role based on admin status
-        setUserRole(userData.is_admin ? "admin" : "member")
+        // Set user type
+        setUserType(userData.user_type)
         setLoading(false)
       } catch (error) {
         console.error("Error checking verification:", error)
@@ -105,9 +104,9 @@ export default function DashboardPage() {
     }
   }
 
-  // Function to toggle user role
-  const toggleUserRole = () => {
-    setUserRole(userRole === "member" ? "admin" : "member")
+  // Function to toggle user type
+  const toggleUserType = () => {
+    setUserType(userType === "member" ? "admin" : "member")
   }
 
   // Function to handle sign out
@@ -292,7 +291,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
         {/* Admin Indicator */}
-        {userRole === "admin" && (
+        {userType === "admin" && (
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge className="bg-[#09331f] text-white px-3 py-1">Admin Dashboard</Badge>
@@ -327,7 +326,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Admin Actions Section - Only visible for admin users */}
-        {userRole === "admin" && (
+        {userType === "admin" && (
           <div className="mb-8">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
               <Shield className="h-5 w-5 text-[#09331f] dark:text-[#0a4429]" />
@@ -545,8 +544,8 @@ export default function DashboardPage() {
           <Button onClick={cycleAttendanceStatus} variant="outline" className="text-sm">
             Toggle Attendance Status (Demo)
           </Button>
-          <Button onClick={toggleUserRole} variant="outline" className="text-sm">
-            Toggle User Role (Demo): {userRole === "admin" ? "Admin" : "Member"}
+          <Button onClick={toggleUserType} variant="outline" className="text-sm">
+            Toggle User Type (Demo): {userType === "admin" ? "Admin" : "Member"}
           </Button>
         </div>
       </main>

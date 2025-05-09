@@ -36,7 +36,7 @@ export default function SetupPage() {
         // Check if user email matches the one in Directory
         const { data: directoryData, error: directoryError } = await supabase
           .from("Directory")
-          .select("id")
+          .select("id, email")
           .eq("email", session.user.email)
           .single()
 
@@ -45,14 +45,17 @@ export default function SetupPage() {
           return
         }
 
+        // Use Directory id as the user's id
+        const userId = directoryData.id.toString()
+
         // Check if user already exists
-        const { data: existingUser } = await supabase.from("Users").select("*").eq("id", session.user.id).single()
+        const { data: existingUser } = await supabase.from("Users").select("*").eq("id", userId).single()
 
         if (existingUser) {
           // User already exists, redirect based on role and verification status
           if (!existingUser.verification) {
             router.push("/pending-verification")
-          } else if (existingUser.is_admin) {
+          } else if (existingUser.user_type === "admin") {
             router.push("/admin/attendance-overview")
           } else {
             router.push("/attendance-overview")
@@ -62,16 +65,15 @@ export default function SetupPage() {
 
         // Prepare user data
         const userData = {
-          id: session.user.id,
+          id: userId,
           name: session.user.user_metadata.full_name || session.user.user_metadata.name || "User",
-          role: registrationData.userType === "admin" ? "admin" : "member",
+          user_type: registrationData.userType,
+          role: registrationData.userType === "admin" ? registrationData.adminRole : registrationData.memberType,
           committee: registrationData.committee || null,
-          verification: false, // Requires admin verification
           section: registrationData.voiceSection || null,
-          is_admin: registrationData.userType === "admin",
-          is_performing: registrationData.isPerforming || false,
-          is_executive_board: registrationData.isExecutiveBoard || false,
-          admin_role: registrationData.adminRole || null,
+          is_execboard: registrationData.isExecBoard || false,
+          is_sechead: registrationData.isSecHead || false,
+          verification: false, // Requires admin verification
           profile_image_url: session.user.user_metadata.avatar_url || null,
         }
 

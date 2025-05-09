@@ -19,13 +19,12 @@ import { Pencil, Save, X } from "lucide-react"
 interface UserProfile {
   id: string
   name: string
-  role: string
+  user_type: "admin" | "member"
+  role: "conductor" | "performing" | "non-performing"
   committee: string | null
   section: string | null
-  is_admin: boolean
-  is_performing: boolean
-  is_executive_board: boolean
-  admin_role: string | null
+  is_sechead: boolean
+  is_execboard: boolean
   email: string
   birthday: string | null
   id_number: string | null
@@ -191,7 +190,7 @@ export default function ProfilePage() {
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
             {/* Dashboard Navigation */}
-            <DashboardNav isAdmin={profile?.is_admin || false} />
+            <DashboardNav isAdmin={profile?.user_type === "admin"} />
 
             <h1 className="text-2xl font-bold text-[#09331f] dark:text-white md:text-3xl mb-6">My Profile</h1>
 
@@ -281,12 +280,10 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <Badge className="bg-[#09331f]">{profile.is_admin ? "Admin" : "Member"}</Badge>
-                          {profile.is_performing && <Badge className="bg-blue-500">Performing</Badge>}
-                          {profile.is_executive_board && <Badge className="bg-purple-500">Executive Board</Badge>}
-                          {profile.admin_role && (
-                            <Badge className="bg-amber-500">{formatValue(profile.admin_role)}</Badge>
-                          )}
+                          <Badge className="bg-[#09331f]">{profile.user_type === "admin" ? "Admin" : "Member"}</Badge>
+                          <Badge className="bg-blue-500">{formatValue(profile.role)}</Badge>
+                          {profile.is_execboard && <Badge className="bg-purple-500">Executive Board</Badge>}
+                          {profile.is_sechead && <Badge className="bg-amber-500">Section Head</Badge>}
                         </div>
                       </div>
                     </div>
@@ -314,13 +311,6 @@ export default function ProfilePage() {
                         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Voice Section</h3>
                         <p className="text-lg font-medium dark:text-white">{formatValue(profile.section)}</p>
                       </div>
-
-                      {profile.is_admin && profile.admin_role && (
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Admin Role</h3>
-                          <p className="text-lg font-medium dark:text-white">{formatValue(profile.admin_role)}</p>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -10,14 +10,13 @@ export interface Database {
         Row: {
           id: string
           name: string
-          role: string
+          user_type: "admin" | "member"
+          role: "conductor" | "performing" | "non-performing"
           committee: string | null
-          verification: boolean
           section: string | null
-          is_admin: boolean
-          is_performing: boolean
-          is_executive_board: boolean
-          admin_role: string | null
+          is_sechead: boolean
+          is_execboard: boolean
+          verification: boolean
           birthday: string | null
           id_number: string | null
           degree_program: string | null
@@ -27,14 +26,13 @@ export interface Database {
         Insert: {
           id: string
           name: string
-          role: string
+          user_type: "admin" | "member"
+          role: "conductor" | "performing" | "non-performing"
           committee?: string | null
-          verification?: boolean
           section?: string | null
-          is_admin?: boolean
-          is_performing?: boolean
-          is_executive_board?: boolean
-          admin_role?: string | null
+          is_sechead?: boolean
+          is_execboard?: boolean
+          verification?: boolean
           birthday?: string | null
           id_number?: string | null
           degree_program?: string | null
@@ -44,14 +42,13 @@ export interface Database {
         Update: {
           id?: string
           name?: string
-          role?: string
+          user_type?: "admin" | "member"
+          role?: "conductor" | "performing" | "non-performing"
           committee?: string | null
-          verification?: boolean
           section?: string | null
-          is_admin?: boolean
-          is_performing?: boolean
-          is_executive_board?: boolean
-          admin_role?: string | null
+          is_sechead?: boolean
+          is_execboard?: boolean
+          verification?: boolean
           birthday?: string | null
           id_number?: string | null
           degree_program?: string | null

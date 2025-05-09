@@ -26,8 +26,8 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
 
   const navItems: NavItem[] = [
     {
-      label: "Home",
-      href: "/",
+      label: "Dashboard",
+      href: "/dashboard",
       icon: <Home className="h-5 w-5" />,
     },
     {

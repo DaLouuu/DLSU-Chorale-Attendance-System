@@ -231,26 +231,32 @@ export default function HomePage() {
           </div>
         )}
 
+
         {/* Date and Attendance Status */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center w-full sm:w-auto">
+          {/* Mobile date display (3-line format like desktop) */}
+          <div className="flex sm:hidden w-full gap-3 items-center">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 text-center w-[80px] h-[80px] flex flex-col justify-center flex-shrink-0">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">TODAY</div>
+              <div className="text-xl font-bold">{dayName}</div>
+              <div className="text-sm font-medium">{monthDay}</div>
+            </div>
+            <div className="flex-1">{renderAttendanceStatus()}</div>
+          </div>
+
+          {/* Desktop date display (original 3-line format) */}
+          <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center w-full sm:w-auto">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">TODAY</div>
             <div className="text-2xl font-bold">{dayName}</div>
             <div className="text-lg font-medium">{monthDay}</div>
           </div>
 
-          {renderAttendanceStatus()}
+          {/* Desktop attendance status */}
+          <div className="hidden sm:block flex-1">{renderAttendanceStatus()}</div>
         </div>
 
-        {/* Demo Controls */}
-        <div className="mb-8 flex flex-wrap gap-2">
-          <Button onClick={cycleAttendanceStatus} variant="outline" className="text-sm">
-            Toggle Attendance Status (Demo)
-          </Button>
-          <Button onClick={toggleUserRole} variant="outline" className="text-sm">
-            Toggle User Role (Demo): {userRole === "admin" ? "Admin" : "Member"}
-          </Button>
-        </div>
+        
+
 
         {/* Admin Actions Section - Only visible for admin users */}
         {userRole === "admin" && (
@@ -449,6 +455,16 @@ export default function HomePage() {
         </div>
       </main>
 
+      {/* Demo Controls */}
+      <div className="mb-8 flex flex-wrap gap-2">
+          <Button onClick={cycleAttendanceStatus} variant="outline" className="text-sm">
+            Toggle Attendance Status (Demo)
+          </Button>
+          <Button onClick={toggleUserRole} variant="outline" className="text-sm">
+            Toggle User Role (Demo): {userRole === "admin" ? "Admin" : "Member"}
+          </Button>
+        </div>
+
       {/* Footer */}
       <footer className="bg-[#1B1B1B] py-4 mt-auto">
         <div className="container mx-auto px-4 text-center text-white text-sm">
@@ -456,5 +472,7 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
+
+    
   )
 }

@@ -53,8 +53,7 @@ export async function GET(request: NextRequest) {
       if (userData.is_admin) {
         return NextResponse.redirect(new URL("/admin/attendance-overview", request.url))
       } else {
-        // Explicitly redirect members to the dashboard page
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        return NextResponse.redirect(new URL("/attendance-form", request.url))
       }
     }
   }

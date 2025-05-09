@@ -45,6 +45,21 @@ export default function SetupPage() {
           return
         }
 
+        // Check if user already exists
+        const { data: existingUser } = await supabase.from("Users").select("*").eq("id", session.user.id).single()
+
+        if (existingUser) {
+          // User already exists, redirect based on role and verification status
+          if (!existingUser.verification) {
+            router.push("/pending-verification")
+          } else if (existingUser.is_admin) {
+            router.push("/admin/attendance-overview")
+          } else {
+            router.push("/attendance-overview")
+          }
+          return
+        }
+
         // Prepare user data
         const userData = {
           id: session.user.id,
@@ -57,6 +72,7 @@ export default function SetupPage() {
           is_performing: registrationData.isPerforming || false,
           is_executive_board: registrationData.isExecutiveBoard || false,
           admin_role: registrationData.adminRole || null,
+          profile_image_url: session.user.user_metadata.avatar_url || null,
         }
 
         // Insert user data into Users table
@@ -69,13 +85,8 @@ export default function SetupPage() {
         // Clear registration data
         localStorage.removeItem("registrationData")
 
-        // Redirect based on user role
-        if (userData.is_admin) {
-          router.push("/admin/attendance-overview")
-        } else {
-          router.push("/attendance-form")
-        }
-
+        // Redirect to pending verification page
+        router.push("/pending-verification")
         toast.success("Registration successful! Awaiting admin verification.")
       } catch (error) {
         console.error("Setup error:", error)
@@ -90,18 +101,22 @@ export default function SetupPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
         <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md border-2 border-[#09331f]/20 shadow-lg">
+          <Card className="w-full max-w-md border-2 border-[#09331f]/20 shadow-lg dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-[#09331f]">Setting up your account</CardTitle>
+              <CardTitle className="text-2xl font-bold text-[#09331f] dark:text-white">
+                Setting up your account
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#09331f] border-t-transparent mb-4"></div>
-              <p className="text-center text-gray-600">Please wait while we set up your account...</p>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#09331f] border-t-transparent dark:border-white dark:border-t-transparent mb-4"></div>
+              <p className="text-center text-gray-600 dark:text-gray-300">
+                Please wait while we set up your account...
+              </p>
             </CardContent>
           </Card>
         </main>

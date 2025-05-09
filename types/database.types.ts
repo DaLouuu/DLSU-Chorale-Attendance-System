@@ -18,6 +18,11 @@ export interface Database {
           is_performing: boolean
           is_executive_board: boolean
           admin_role: string | null
+          birthday: string | null
+          id_number: string | null
+          degree_program: string | null
+          contact_number: string | null
+          profile_image_url: string | null
         }
         Insert: {
           id: string
@@ -30,6 +35,11 @@ export interface Database {
           is_performing?: boolean
           is_executive_board?: boolean
           admin_role?: string | null
+          birthday?: string | null
+          id_number?: string | null
+          degree_program?: string | null
+          contact_number?: string | null
+          profile_image_url?: string | null
         }
         Update: {
           id?: string
@@ -42,6 +52,11 @@ export interface Database {
           is_performing?: boolean
           is_executive_board?: boolean
           admin_role?: string | null
+          birthday?: string | null
+          id_number?: string | null
+          degree_program?: string | null
+          contact_number?: string | null
+          profile_image_url?: string | null
         }
       }
       AttendanceLogs: {

@@ -11,17 +11,17 @@ import { ExcuseReasonOptions } from "@/components/attendance/excuse-reason-optio
 
 export function SteppingOutForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [steppingOutDate, setSteppingOutDate] = useState("")
-  const [steppingOutTime, setSteppingOutTime] = useState("")
+  const [date, setDate] = useState("")
+  const [leaveTime, setLeaveTime] = useState("")
   const [returnTime, setReturnTime] = useState("")
-  const [steppingOutReason, setSteppingOutReason] = useState("")
-  const [steppingOutDescription, setSteppingOutDescription] = useState("")
+  const [reason, setReason] = useState("")
+  const [description, setDescription] = useState("")
 
   const handleSubmit = (e) => {
     e.preventDefault()
 
     // Validate form
-    if (!steppingOutDate || !steppingOutTime || !returnTime || !steppingOutReason) {
+    if (!date || !leaveTime || !returnTime || !reason) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -30,11 +30,11 @@ export function SteppingOutForm() {
       return
     }
 
-    // Validate that return time is after stepping out time
-    if (steppingOutTime >= returnTime) {
+    // Validate that return time is after leave time
+    if (leaveTime >= returnTime) {
       toast({
         title: "Error",
-        description: "Return time must be after stepping out time",
+        description: "Return time must be after leave time",
         variant: "destructive",
       })
       return
@@ -46,15 +46,15 @@ export function SteppingOutForm() {
     setTimeout(() => {
       toast({
         title: "Success",
-        description: "Your stepping out request has been submitted successfully",
+        description: "Your stepping out excuse has been submitted successfully",
       })
 
       // Reset form
-      setSteppingOutDate("")
-      setSteppingOutTime("")
+      setDate("")
+      setLeaveTime("")
       setReturnTime("")
-      setSteppingOutReason("")
-      setSteppingOutDescription("")
+      setReason("")
+      setDescription("")
       setIsSubmitting(false)
     }, 1500)
   }
@@ -62,73 +62,76 @@ export function SteppingOutForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="stepping-out-date" className="text-sm font-medium text-[#1B1B1B]">
+        <Label htmlFor="stepping-out-date" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
           Date <span className="text-red-500">*</span>
         </Label>
         <Input
           id="stepping-out-date"
           type="date"
-          value={steppingOutDate}
-          onChange={(e) => setSteppingOutDate(e.target.value)}
-          className="border-[#09331f]/30 focus:ring-[#09331f]/30"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           required
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="stepping-out-time" className="text-sm font-medium text-[#1B1B1B]">
-            Stepping Out Time <span className="text-red-500">*</span>
+          <Label htmlFor="leave-time" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
+            Leave Time <span className="text-red-500">*</span>
           </Label>
           <Input
-            id="stepping-out-time"
+            id="leave-time"
             type="time"
-            value={steppingOutTime}
-            onChange={(e) => setSteppingOutTime(e.target.value)}
-            className="border-[#09331f]/30 focus:ring-[#09331f]/30"
+            value={leaveTime}
+            onChange={(e) => setLeaveTime(e.target.value)}
+            className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="return-time" className="text-sm font-medium text-[#1B1B1B]">
-            Expected Return Time <span className="text-red-500">*</span>
+          <Label htmlFor="return-time" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
+            Return Time <span className="text-red-500">*</span>
           </Label>
           <Input
             id="return-time"
             type="time"
             value={returnTime}
             onChange={(e) => setReturnTime(e.target.value)}
-            className="border-[#09331f]/30 focus:ring-[#09331f]/30"
+            className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="stepping-out-reason" className="text-sm font-medium text-[#1B1B1B]">
+        <Label htmlFor="stepping-out-reason" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
           Reason <span className="text-red-500">*</span>
         </Label>
-        <Select value={steppingOutReason} onValueChange={setSteppingOutReason} required>
-          <SelectTrigger id="stepping-out-reason" className="border-[#09331f]/30 focus:ring-[#09331f]/30">
+        <Select value={reason} onValueChange={setReason} required>
+          <SelectTrigger
+            id="stepping-out-reason"
+            className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          >
             <SelectValue placeholder="Select a reason" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
             <ExcuseReasonOptions />
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="stepping-out-description" className="text-sm font-medium text-[#1B1B1B]">
+        <Label htmlFor="stepping-out-description" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
           Additional Details
         </Label>
         <Textarea
           id="stepping-out-description"
-          placeholder="Please provide more details about your stepping out request..."
-          value={steppingOutDescription}
-          onChange={(e) => setSteppingOutDescription(e.target.value)}
-          className="min-h-[120px] border-[#09331f]/30 focus:ring-[#09331f]/30"
+          placeholder="Please provide more details about your stepping out excuse..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="min-h-[120px] border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         />
       </div>
 
@@ -139,7 +142,7 @@ export function SteppingOutForm() {
             <span>Submitting...</span>
           </div>
         ) : (
-          "Submit Request"
+          "Submit Excuse"
         )}
       </Button>
     </form>

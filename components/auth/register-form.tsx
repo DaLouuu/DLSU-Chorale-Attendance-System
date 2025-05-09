@@ -17,7 +17,7 @@ export function RegisterForm() {
   const [userType, setUserType] = useState<"admin" | "member" | "">("")
   const [adminRole, setAdminRole] = useState("")
   const [isExecutiveBoard, setIsExecutiveBoard] = useState(false)
-  const [isPerforming, setIsPerforming] = useState(false)
+  const [memberType, setMemberType] = useState("")
   const [committee, setCommittee] = useState("")
   const [voiceSection, setVoiceSection] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -35,7 +35,8 @@ export function RegisterForm() {
     }
 
     if (userType === "member") {
-      if (isPerforming) {
+      if (!memberType) return false
+      if (memberType === "performing") {
         return !!voiceSection && !!committee
       } else {
         return !!committee
@@ -49,7 +50,7 @@ export function RegisterForm() {
   const handleUserTypeChange = (value: string) => {
     setUserType(value as "admin" | "member" | "")
     setAdminRole("")
-    setIsPerforming(false)
+    setMemberType("")
     setIsExecutiveBoard(false)
     setVoiceSection("")
     setCommittee("")
@@ -90,7 +91,7 @@ export function RegisterForm() {
           isExecutiveBoard,
           committee,
           voiceSection,
-          isPerforming,
+          isPerforming: userType === "admin" ? adminRole === "performing" : memberType === "performing",
         }),
       )
 
@@ -106,20 +107,24 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
+    <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm dark:bg-gray-900 dark:border-gray-700">
       <div className="p-8 space-y-7">
         <div className="space-y-5">
           {/* User Type Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-[#1B1B1B]">I am registering as:</Label>
+            <Label className="text-sm font-medium text-[#1B1B1B] dark:text-white">I am registering as:</Label>
             <RadioGroup value={userType} onValueChange={handleUserTypeChange} className="flex gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="admin" id="admin" disabled={isLoading} />
-                <Label htmlFor="admin">Admin</Label>
+                <Label htmlFor="admin" className="dark:text-white">
+                  Admin
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="member" id="member" disabled={isLoading} />
-                <Label htmlFor="member">Member</Label>
+                <Label htmlFor="member" className="dark:text-white">
+                  Member
+                </Label>
               </div>
             </RadioGroup>
           </div>
@@ -127,7 +132,7 @@ export function RegisterForm() {
           {/* Admin Role Selection - Only show if admin is selected */}
           {userType === "admin" && (
             <div className="space-y-3">
-              <Label htmlFor="admin-role" className="text-sm font-medium text-[#1B1B1B]">
+              <Label htmlFor="admin-role" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
                 Admin Role:
               </Label>
               <Select
@@ -136,23 +141,24 @@ export function RegisterForm() {
                   setAdminRole(value)
                   // Reset performing status if conductor is selected
                   if (value === "conductor") {
-                    setIsPerforming(false)
                     setIsExecutiveBoard(false)
                     setVoiceSection("")
                     setCommittee("")
                   } else if (value === "performing") {
-                    setIsPerforming(true)
+                    // Do nothing, keep other fields
                   } else {
-                    setIsPerforming(false)
                     setVoiceSection("")
                   }
                 }}
                 disabled={isLoading}
               >
-                <SelectTrigger id="admin-role" className="border-[#09331f]/30 focus:ring-[#09331f]/30">
+                <SelectTrigger
+                  id="admin-role"
+                  className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
                   <SelectValue placeholder="Select your admin role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
                   <SelectItem value="conductor">Conductor</SelectItem>
                   <SelectItem value="performing">Performing</SelectItem>
                   <SelectItem value="non-performing">Non-Performing</SelectItem>
@@ -171,42 +177,58 @@ export function RegisterForm() {
                   onCheckedChange={(checked) => setIsExecutiveBoard(checked === true)}
                   disabled={isLoading}
                 />
-                <Label htmlFor="is-executive-board">Executive Board</Label>
+                <Label htmlFor="is-executive-board" className="dark:text-white">
+                  Executive Board
+                </Label>
               </div>
             </div>
           )}
 
-          {/* Performing Member Option - Only for regular members */}
+          {/* Member Type Selection - Only for regular members */}
           {userType === "member" && (
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is-performing"
-                  checked={isPerforming}
-                  onCheckedChange={(checked) => {
-                    setIsPerforming(checked === true)
-                    if (!checked) {
-                      setVoiceSection("")
-                    }
-                  }}
-                  disabled={isLoading}
-                />
-                <Label htmlFor="is-performing">Performing Member</Label>
-              </div>
+              <Label htmlFor="member-type" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
+                Member Type: <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={memberType}
+                onValueChange={(value) => {
+                  setMemberType(value)
+                  if (value !== "performing") {
+                    setVoiceSection("")
+                  }
+                }}
+                disabled={isLoading}
+              >
+                <SelectTrigger
+                  id="member-type"
+                  className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                  <SelectValue placeholder="Select your member type" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                  <SelectItem value="performing">Performing</SelectItem>
+                  <SelectItem value="non-performing">Non-Performing</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {/* Voice Section - Show if performing member or performing admin */}
-          {((userType === "member" && isPerforming) || (userType === "admin" && adminRole === "performing")) && (
+          {((userType === "member" && memberType === "performing") ||
+            (userType === "admin" && adminRole === "performing")) && (
             <div className="space-y-3">
-              <Label htmlFor="voice-section" className="text-sm font-medium text-[#1B1B1B]">
+              <Label htmlFor="voice-section" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
                 Voice Section: <span className="text-red-500">*</span>
               </Label>
               <Select value={voiceSection} onValueChange={setVoiceSection} disabled={isLoading}>
-                <SelectTrigger id="voice-section" className="border-[#09331f]/30 focus:ring-[#09331f]/30">
+                <SelectTrigger
+                  id="voice-section"
+                  className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
                   <SelectValue placeholder="Select your voice section" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
                   <SelectItem value="soprano">Soprano</SelectItem>
                   <SelectItem value="alto">Alto</SelectItem>
                   <SelectItem value="tenor">Tenor</SelectItem>
@@ -219,27 +241,33 @@ export function RegisterForm() {
           {/* Committee Selection - Show for all members and admins except conductor */}
           {(userType === "member" || (userType === "admin" && adminRole !== "conductor" && adminRole !== "")) && (
             <div className="space-y-3">
-              <Label htmlFor="committee" className="text-sm font-medium text-[#1B1B1B]">
+              <Label htmlFor="committee" className="text-sm font-medium text-[#1B1B1B] dark:text-white">
                 Committee: <span className="text-red-500">*</span>
               </Label>
               <Select value={committee} onValueChange={setCommittee} disabled={isLoading}>
-                <SelectTrigger id="committee" className="border-[#09331f]/30 focus:ring-[#09331f]/30">
+                <SelectTrigger
+                  id="committee"
+                  className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
                   <SelectValue placeholder="Select your committee" />
                 </SelectTrigger>
-                <SelectContent>
-                  {/* Standard committees */}
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="production">Production and Logistics</SelectItem>
-                  <SelectItem value="hr">Human Resources</SelectItem>
-
-                  {/* Additional options for admin */}
-                  {userType === "admin" && (
+                <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                  {userType === "member" ? (
                     <>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="publications">Publications & Marketing</SelectItem>
+                      <SelectItem value="production">Production & Logistics</SelectItem>
+                      <SelectItem value="documentation">Documentation</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="publications">Publications & Marketing</SelectItem>
+                      <SelectItem value="production">Production & Logistics</SelectItem>
+                      <SelectItem value="documentation">Documentation</SelectItem>
                       <SelectItem value="n/a">N/A</SelectItem>
-                      <SelectItem value="cm">CM (Committee Manager)</SelectItem>
-                      <SelectItem value="acm">ACM (Assistant Committee Manager)</SelectItem>
-                      <SelectItem value="dm-marketing">DM for Marketing</SelectItem>
-                      <SelectItem value="dm-documentations">DM for Documentations</SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -281,15 +309,15 @@ export function RegisterForm() {
           )}
         </Button>
 
-        <div className="pt-5 border-t border-gray-200 mt-4">
-          <p className="text-center text-xs text-gray-700">
+        <div className="pt-5 border-t border-gray-200 dark:border-gray-700 mt-4">
+          <p className="text-center text-xs text-gray-700 dark:text-gray-300">
             After registration, an admin will verify your membership before you can access the system.
           </p>
         </div>
 
         <div className="text-center text-sm">
-          <span className="text-gray-700">Already have an account?</span>{" "}
-          <Link href="/login" className="text-[#09331f] hover:underline font-medium">
+          <span className="text-gray-700 dark:text-gray-300">Already have an account?</span>{" "}
+          <Link href="/login" className="text-[#09331f] hover:underline font-medium dark:text-green-400">
             Sign in
           </Link>
         </div>

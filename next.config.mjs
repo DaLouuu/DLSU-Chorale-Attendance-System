@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -7,6 +8,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    domains: ['sstmwvnstzwaopqjkurm.supabase.co'],
     unoptimized: true,
   },
 }

@@ -8,10 +8,11 @@ import Link from "next/link"
 interface SmoothScrollLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string
   children: React.ReactNode
+  offset?: number // Add offset option for fixed headers
 }
 
 export const SmoothScrollLink = forwardRef<HTMLAnchorElement, SmoothScrollLinkProps>(
-  ({ href, children, ...props }, ref) => {
+  ({ href, children, offset = 80, ...props }, ref) => {
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       // Only apply smooth scrolling for same-page hash links
       if (href.startsWith("#")) {
@@ -20,9 +21,12 @@ export const SmoothScrollLink = forwardRef<HTMLAnchorElement, SmoothScrollLinkPr
         const targetElement = document.getElementById(targetId)
 
         if (targetElement) {
-          targetElement.scrollIntoView({
+          const elementPosition = targetElement.getBoundingClientRect().top
+          const offsetPosition = elementPosition + window.pageYOffset - offset
+
+          window.scrollTo({
+            top: offsetPosition,
             behavior: "smooth",
-            block: "start",
           })
 
           // Update URL without reload

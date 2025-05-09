@@ -5,12 +5,18 @@
 html {
   scroll-behavior: smooth;
   height: 100%;
+  scroll-padding-top: 80px; /* Adds padding for fixed headers */
 }
 
 body {
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100%;
   overflow-y: auto;
+}
+
+/* Smooth scrolling for all elements */
+* {
+  scroll-behavior: smooth;
 }
 
 @layer utilities {
@@ -100,5 +106,39 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Responsive styles for mobile devices */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .text-3xl {
+    font-size: 1.5rem !important;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  .p-8 {
+    padding: 1.5rem !important;
+  }
+
+  .space-y-7 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
   }
 }

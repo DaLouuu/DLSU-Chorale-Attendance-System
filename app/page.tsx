@@ -268,7 +268,7 @@ export default function HomePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Excuse Approval */}
-              <Link href="/excuse-approval" className="group">
+              <Link href="/admin/excuse-approval" className="group">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5">
                   <div className="flex items-start gap-4">
                     <div className="bg-[#09331f]/10 rounded-lg p-3 text-[#09331f] group-hover:bg-[#09331f]/20">

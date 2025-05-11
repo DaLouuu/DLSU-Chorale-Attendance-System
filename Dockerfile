@@ -5,20 +5,18 @@
 ################################
 FROM node:20-alpine AS deps
 WORKDIR /app
-# Copy only manifest files
+RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
-# Bootstrap pnpm and install exactly what's in lockfile
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 ################################
 # 2. Build the application
 ################################
 FROM node:20-alpine AS builder
 WORKDIR /app
-# Copy installed modules and source
+RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Build (e.g. Next.js, Vue, etc.)
 RUN pnpm build
 
 ################################
@@ -26,6 +24,7 @@ RUN pnpm build
 ################################
 FROM node:20-alpine AS runner
 WORKDIR /app
+RUN corepack enable
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs

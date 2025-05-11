@@ -15,6 +15,11 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 RUN corepack enable
+
+# Accept build arguments
+ARG RESEND_API_KEY
+ENV RESEND_API_KEY=${RESEND_API_KEY}
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build

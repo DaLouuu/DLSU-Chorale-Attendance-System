@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePathname } from 'next/navigation'
 import { format } from "date-fns"
 import Link from "next/link"
 import Image from "next/image"
@@ -36,10 +37,11 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<UserRole>("member")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   // Check user verification status
   useEffect(() => {
-    const checkUserVerification = async () => {
+    const checkUserRoleAndRedirect = async () => {
       try {
         setLoading(true)
         const {
@@ -51,36 +53,48 @@ export default function DashboardPage() {
           return
         }
 
-        // Get user data from Users table
         const { data: userData, error } = await supabase
           .from("Users")
-          .select("verification, is_admin")
+          .select("user_type")
           .eq("id", session.user.id)
           .single()
 
-        if (error || !userData) {
-          console.error("Error fetching user data:", error)
-          router.push("/pending-verification")
+        if (error) {
+          console.error("Dashboard: Error fetching user data:", error)
+          await supabase.auth.signOut()
+          router.push("/login?error=dashboard_user_fetch_failed")
+          return
+        }
+        
+        if (!userData) {
+          console.warn("Dashboard: User session exists but no user data found in Users table. Redirecting to setup.")
+          router.push("/auth/setup")
           return
         }
 
-        // Check verification status
-        if (!userData.verification) {
-          router.push("/pending-verification")
-          return
+        const isAdmin = userData.user_type === 'admin'
+        setUserRole(isAdmin ? "admin" : "member")
+        
+        if (isAdmin) {
+            if (pathname !== "/admin/attendance-overview") {
+                 router.push("/admin/attendance-overview");
+            }
+        } else {
+            if (pathname !== "/attendance-overview") {
+                router.push("/attendance-overview");
+            }
         }
 
-        // Set user role based on admin status
-        setUserRole(userData.is_admin ? "admin" : "member")
-        setLoading(false)
       } catch (error) {
-        console.error("Error checking verification:", error)
-        setLoading(false)
+        console.error("Dashboard: Error in user check/redirect logic:", error)
+        router.push("/login?error=dashboard_unexpected_error")
+      } finally {
+        setLoading(false); 
       }
     }
 
-    checkUserVerification()
-  }, [router])
+    checkUserRoleAndRedirect()
+  }, [router, pathname])
 
   // Update date every minute
   useEffect(() => {

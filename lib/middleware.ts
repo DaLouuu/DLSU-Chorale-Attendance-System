@@ -47,13 +47,12 @@ export async function middleware(req: NextRequest) {
     if (directoryData) {
       const { data: userData, error: userQueryError } = await supabase
         .from("Users")
-        .select("id, is_admin") // Only fetch what's needed for routing
+        .select("id, user_type") // Changed from is_admin to user_type
         .eq("id", session.user.id)
         .single()
 
       if (userQueryError && userQueryError.code !== 'PGRST116') {
         console.error('Middleware: Error querying Users table:', userQueryError);
-        // Similar error handling decision as above
       }
 
       if (!userData) {
@@ -66,8 +65,9 @@ export async function middleware(req: NextRequest) {
 
       // Role-based access control for admin routes if userData exists
       if (userData) {
+        const isAdmin = userData.user_type === 'admin'; // Determine admin status
         const path = req.nextUrl.pathname
-        if (path.startsWith("/admin") && !userData.is_admin) {
+        if (path.startsWith("/admin") && !isAdmin) { // Use isAdmin variable
           return NextResponse.redirect(new URL("/", req.url)) // Redirect non-admins from /admin
         }
       }

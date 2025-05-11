@@ -5,11 +5,14 @@ import type { NextRequest } from "next/server"
 import type { Database } from "@/types/database.types"
 
 export async function GET(request: NextRequest) {
+  console.log("Full callback URL received by /auth/callback-login:", request.url); // Log the full incoming URL
   const requestUrl = new URL(request.url)
+  console.log("Parsed requestUrl object for /auth/callback-login:", requestUrl.toString()); // Log the parsed URL object
   const code = requestUrl.searchParams.get("code")
+  console.log("Extracted 'code' parameter from URL:", code); // Log the extracted code
 
   if (!code) {
-    console.error("OAuth callback-login called without a code.")
+    console.error("OAuth callback-login called without a code. Redirecting to /login?error=oauth_no_code.")
     return NextResponse.redirect(new URL("/login?error=oauth_no_code", request.url))
   }
 
@@ -62,7 +65,7 @@ export async function GET(request: NextRequest) {
   console.log(`Checking Users table for ID: ${session.user.id}`);
   const { data: userProfile, error: userProfileError } = await supabase
     .from("Users")
-    .select("id, is_admin") // We only need to know if they exist and their admin status
+    .select("id, user_type") // Changed from is_admin to user_type
     .eq("id", session.user.id)
     .single()
 
@@ -81,7 +84,8 @@ export async function GET(request: NextRequest) {
 
   // 3. User is in Directory AND Users table -> Logged in, redirect to dashboard
   console.log(`User ID ${session.user.id} FOUND in Users table. Profile:`, userProfile);
-  if (userProfile.is_admin) {
+  const isAdmin = userProfile.user_type === 'admin'; // Determine admin status
+  if (isAdmin) { // Use isAdmin variable
     return NextResponse.redirect(new URL("/admin/attendance-overview", request.url))
   } else {
     // Assuming non-admins go to /attendance-overview as per your previous setup

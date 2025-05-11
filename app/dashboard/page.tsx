@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
         const { data: userData, error } = await supabase
           .from("Users")
-          .select("is_admin")
+          .select("user_type")
           .eq("id", session.user.id)
           .single()
 
@@ -72,9 +72,10 @@ export default function DashboardPage() {
           return
         }
 
-        setUserRole(userData.is_admin ? "admin" : "member")
+        const isAdmin = userData.user_type === 'admin'
+        setUserRole(isAdmin ? "admin" : "member")
         
-        if (userData.is_admin) {
+        if (isAdmin) {
             if (pathname !== "/admin/attendance-overview") {
                  router.push("/admin/attendance-overview");
             }

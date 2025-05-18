@@ -20,10 +20,6 @@ const config = {
     },
     extend: {
       colors: {
-        dlsu: {
-          green: "#09331f",
-          dark: "#1B1B1B",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

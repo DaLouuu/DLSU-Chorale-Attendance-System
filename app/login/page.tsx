@@ -7,13 +7,40 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryBackground } from "@/components/ui/gallery-background"
 import { WhiteLogo } from "@/components/ui/white-logo"
-import { supabase } from "@/lib/supabase"
+import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("")
+  const [isEmailLoading, setIsEmailLoading] = useState(false)
 
+  const handleEmailSignIn = async () => {
+    if (!email) {
+      toast.error("Please enter your email address")
+      return
+    }
+
+    setIsEmailLoading(true)
+
+    try {
+      // In a real implementation, you would authenticate the user here
+      // For now, we'll just simulate a successful login
+      toast.success("Sign in successful!")
+
+      // Redirect to homepage after a brief delay
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
+    } catch (error) {
+      console.error("Error during sign in:", error)
+      toast.error("Failed to sign in with email")
+      setIsEmailLoading(false)
+    }
+  }
+
+  /*
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
 
@@ -42,7 +69,7 @@ export default function LoginPage() {
       }
       setIsLoading(false)
     }
-  }
+  }*/
 
   return (
     <div className="min-h-screen">
@@ -66,8 +93,61 @@ export default function LoginPage() {
 
             <Card className="border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm">
               <CardContent className="p-8">
+                {/* Email input and sign in button */}
+                <div className="space-y-4 mb-6">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-[#09331f]/20 focus:border-[#09331f] focus:ring-[#09331f]"
+                  />
+                  <Button
+                    onClick={handleEmailSignIn}
+                    disabled={isEmailLoading || !email}
+                    className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white"
+                  >
+                    {isEmailLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        <span>Signing in...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="lucide lucide-mail"
+                        >
+                          <rect width="20" height="16" x="2" y="4" rx="2" />
+                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                        <span>Sign in with Email</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                  </div>
+                </div>
+
+                {/* Google sign in button */}
                 <Button
-                  onClick={handleGoogleSignIn}
+                  //onClick={handleGoogleSignIn}
                   disabled={isLoading}
                   className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white"
                 >

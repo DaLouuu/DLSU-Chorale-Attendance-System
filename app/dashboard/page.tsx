@@ -38,7 +38,7 @@ export default function DashboardPage() {
   const router = useRouter()
 
   // Check user verification status
-  useEffect(() => {
+  /*useEffect(() => {
     const checkUserVerification = async () => {
       try {
         setLoading(true)
@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
     checkUserVerification()
   }, [router])
-
+*/
   // Update date every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -162,6 +162,7 @@ export default function DashboardPage() {
     }
   }
 
+  /*
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -171,7 +172,7 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }
+  }*/
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">

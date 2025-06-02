@@ -1,120 +1,96 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type Status = "Pending" | "Approved" | "Rejected"
-export type AttendanceLogMethod = "QR" | "Manual" | "Excused"
+export type Status = "Pending" | "Approved" | "Rejected" | "Excused" | "Unexcused"
+export type AttendanceLogMethod = "RFID" | "Manual" | "WebApp"
 
 export interface Database {
   public: {
     Tables: {
-      Users: {
+      Accounts: {
         Row: {
-          id: string
+          id: number
           name: string
-          role: string
-          committee: string | null
-          verification: boolean
+          role: string | null
+          committee: string
           section: string | null
-          is_admin: boolean
-          is_performing: boolean
-          is_executive_board: boolean
-          admin_role: string | null
-          birthday: string | null
-          id_number: string | null
-          degree_program: string | null
-          contact_number: string | null
-          profile_image_url: string | null
+          user_type: string
+          is_sechead: boolean
+          is_execboard: boolean
+          auth_user_id: string | null
         }
         Insert: {
-          id: string
+          id: number
           name: string
-          role: string
-          committee?: string | null
-          verification?: boolean
+          role?: string | null
+          committee: string
           section?: string | null
-          is_admin?: boolean
-          is_performing?: boolean
-          is_executive_board?: boolean
-          admin_role?: string | null
-          birthday?: string | null
-          id_number?: string | null
-          degree_program?: string | null
-          contact_number?: string | null
-          profile_image_url?: string | null
+          user_type: string
+          is_sechead?: boolean
+          is_execboard: boolean
+          auth_user_id?: string | null
         }
         Update: {
-          id?: string
+          id?: number
           name?: string
-          role?: string
-          committee?: string | null
-          verification?: boolean
+          role?: string | null
+          committee?: string
           section?: string | null
-          is_admin?: boolean
-          is_performing?: boolean
-          is_executive_board?: boolean
-          admin_role?: string | null
-          birthday?: string | null
-          id_number?: string | null
-          degree_program?: string | null
-          contact_number?: string | null
-          profile_image_url?: string | null
+          user_type?: string
+          is_sechead?: boolean
+          is_execboard?: boolean
+          auth_user_id?: string | null
         }
       }
       AttendanceLogs: {
         Row: {
-          userID: string
+          userID: number
           timestamp: string
-          attendance_log_meta: string | null
+          attendance_log_method: AttendanceLogMethod
           synced: boolean
         }
         Insert: {
-          userID: string
+          userID: number
           timestamp: string
-          attendance_log_meta?: string | null
+          attendance_log_method?: AttendanceLogMethod
           synced?: boolean
         }
         Update: {
-          userID?: string
+          userID?: number
           timestamp?: string
-          attendance_log_meta?: string | null
+          attendance_log_method?: AttendanceLogMethod
           synced?: boolean
         }
       }
       ExcuseRequests: {
         Row: {
-          userID: string
+          userID: number
           date: string
           reason: string
-          status: string
+          status: Status
           notes: string | null
-          type: string | null
+          type: string
           eta: string | null
           etd: string | null
-          approved_by: string | null
-          approved_at: string | null
         }
         Insert: {
-          userID: string
+          userID: number
           date: string
           reason: string
-          status: string
+          status: Status
           notes?: string | null
-          type?: string | null
+          type: string
           eta?: string | null
           etd?: string | null
-          approved_by?: string | null
-          approved_at?: string | null
         }
         Update: {
-          userID?: string
+          userID?: number
           date?: string
           reason?: string
-          status?: string
+          status?: Status
           notes?: string | null
-          type?: string | null
+          type?: string
           eta?: string | null
           etd?: string | null
-          approved_by?: string | null
-          approved_at?: string | null
         }
       }
       Directory: {
@@ -139,7 +115,8 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      Status: Status
+      AttendanceLogMethod: AttendanceLogMethod
     }
   }
 }

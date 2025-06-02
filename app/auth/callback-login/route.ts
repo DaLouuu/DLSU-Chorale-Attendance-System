@@ -25,35 +25,32 @@ export async function GET(request: NextRequest) {
       const { data: directoryData, error: directoryError } = await supabase
         .from("Directory")
         .select("id")
-        .eq("email", session.user.email)
+        .eq("email", session.user.email!) // Assuming email must exist
         .single()
 
       if (directoryError || !directoryData) {
         return NextResponse.redirect(new URL("/unauthorized", request.url))
       }
 
-      // Check if user exists in Users table
-      const { data: userData, error: userError } = await supabase
-        .from("Users")
-        .select("is_admin, verification")
-        .eq("id", session.user.id)
+      // Check if user exists in Accounts table using auth_user_id
+      const { data: accountData, error: accountError } = await supabase
+        .from("Accounts")
+        .select("user_type") // Only select what's needed for redirection
+        .eq("auth_user_id", session.user.id)
         .single()
 
-      if (userError) {
-        // User doesn't exist, redirect to registration
+      if (accountError || !accountData) {
+        // User account doesn't exist in Accounts table, or error fetching
+        // This could mean they registered but setup didn't complete, or they never registered.
+        // Redirecting to /register allows them to start over or complete setup if /auth/setup handles existing Directory entries.
         return NextResponse.redirect(new URL("/register", request.url))
       }
 
-      // Check if user is verified
-      if (!userData.verification) {
-        return NextResponse.redirect(new URL("/pending-verification", request.url))
-      }
-
-      // Redirect based on user role
-      if (userData.is_admin) {
+      // User account exists, redirect based on user_type
+      if (accountData.user_type === "admin") {
         return NextResponse.redirect(new URL("/admin/attendance-overview", request.url))
       } else {
-        return NextResponse.redirect(new URL("/attendance-form", request.url))
+        return NextResponse.redirect(new URL("/attendance-form", request.url)) // Default member page
       }
     }
   }

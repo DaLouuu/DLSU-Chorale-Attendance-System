@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       const { data: directoryData, error: directoryError } = await supabase
         .from("Directory")
         .select("id")
-        .eq("email", session.user.email)
+        .eq("email", session.user.email!)
         .single()
 
       if (directoryError || !directoryData) {
@@ -36,30 +36,33 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL("/unauthorized", request.url))
       }
 
-      // Check if user already exists in Users table
-      const { data: existingUser } = await supabase.from("Users").select("*").eq("id", session.user.id).single()
+      // Check if user already exists in Accounts table using auth_user_id
+      const { data: existingAccount } = await supabase.from("Accounts").select("auth_user_id").eq("auth_user_id", session.user.id).single()
 
-      if (!existingUser) {
-        // Send welcome email
-        try {
-          await resend.emails.send({
-            from: "DLSU Chorale <noreply@dlsuchorale.com>",
-            to: session.user.email,
-            subject: "Welcome to DLSU Chorale Attendance System",
-            text: `
-              Dear ${session.user.user_metadata.full_name || session.user.user_metadata.name || "Member"},
-              
-              Welcome to the DLSU Chorale Attendance System! Your registration is being processed.
-              
-              Your account will need to be verified by an administrator before you can access all features.
-              You will receive another email once your account has been verified.
-              
-              Best regards,
-              DLSU Chorale Admin Team
-            `,
-          })
-        } catch (error) {
-          console.error("Failed to send welcome email:", error)
+      if (!existingAccount) {
+        // Send welcome email - updated content
+        if (session.user.email) {
+          try {
+            await resend.emails.send({
+              from: "DLSU Chorale <noreply@dlsuchorale.com>",
+              to: session.user.email,
+              subject: "Welcome to DLSU Chorale Attendance System",
+              text: `
+                Dear ${session.user.user_metadata.full_name || session.user.user_metadata.name || "Member"},
+                
+                Welcome to the DLSU Chorale Attendance System! Your registration is being processed.
+                
+                You can now proceed to set up your account.
+                
+                Best regards,
+                DLSU Chorale Admin Team
+              `,
+            })
+          } catch (error) {
+            console.error("Failed to send welcome email:", error)
+          }
+        } else {
+          console.error("Welcome email not sent: user email undefined in session.");
         }
       }
     }

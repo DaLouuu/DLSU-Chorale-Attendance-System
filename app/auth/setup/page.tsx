@@ -36,7 +36,7 @@ export default function SetupPage() {
         // Check if user email matches the one in Directory
         const { data: directoryData, error: directoryError } = await supabase
           .from("Directory")
-          .select("id")
+          .select("id, email")
           .eq("email", session.user.email)
           .single()
 
@@ -45,14 +45,12 @@ export default function SetupPage() {
           return
         }
 
-        // Check if user already exists
-        const { data: existingUser } = await supabase.from("Users").select("*").eq("id", session.user.id).single()
+        // Check if user already exists in Accounts table using auth_user_id
+        const { data: existingAccount } = await supabase.from("Accounts").select("*").eq("auth_user_id", session.user.id).single()
 
-        if (existingUser) {
-          // User already exists, redirect based on role and verification status
-          if (!existingUser.verification) {
-            router.push("/pending-verification")
-          } else if (existingUser.is_admin) {
+        if (existingAccount) {
+          // User account already exists, redirect based on role
+          if (existingAccount.user_type === "admin") {
             router.push("/admin/attendance-overview")
           } else {
             router.push("/attendance-overview")
@@ -60,23 +58,20 @@ export default function SetupPage() {
           return
         }
 
-        // Prepare user data
-        const userData = {
-          id: session.user.id,
+        // Prepare user data for Accounts table
+        const accountData = {
+          id: directoryData.id,
+          auth_user_id: session.user.id,
           name: session.user.user_metadata.full_name || session.user.user_metadata.name || "User",
-          role: registrationData.userType === "admin" ? "admin" : "member",
-          committee: registrationData.committee || null,
-          verification: false, // Requires admin verification
+          user_type: registrationData.userType,
+          role: registrationData.adminRole || null,
+          committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
-          is_admin: registrationData.userType === "admin",
-          is_performing: registrationData.isPerforming || false,
-          is_executive_board: registrationData.isExecutiveBoard || false,
-          admin_role: registrationData.adminRole || null,
-          profile_image_url: session.user.user_metadata.avatar_url || null,
+          is_execboard: registrationData.isExecutiveBoard || false,
         }
 
-        // Insert user data into Users table
-        const { error: insertError } = await supabase.from("Users").upsert(userData)
+        // Insert user data into Accounts table
+        const { error: insertError } = await supabase.from("Accounts").upsert(accountData)
 
         if (insertError) {
           throw insertError
@@ -85,9 +80,13 @@ export default function SetupPage() {
         // Clear registration data
         localStorage.removeItem("registrationData")
 
-        // Redirect to pending verification page
-        router.push("/pending-verification")
-        toast.success("Registration successful! Awaiting admin verification.")
+        // Redirect based on user type
+        toast.success("Registration successful!")
+        if (accountData.user_type === "admin") {
+          router.push("/admin/attendance-overview")
+        } else {
+          router.push("/attendance-overview")
+        }
       } catch (error) {
         console.error("Setup error:", error)
         toast.error("Failed to complete registration")

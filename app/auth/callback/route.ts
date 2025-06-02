@@ -1,8 +1,8 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import type { Database } from "@/types/database.types"
+// import type { Database } from "@/types/database.types" // createClient from utils/supabase/server will have types
+import { createClient } from "@/utils/supabase/server"
 import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code")
 
   if (code) {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
+    // const cookieStore = cookies() // createClient from utils/supabase/server handles cookies
+    const supabase = createClient() // Uses the server client from utils
 
     // Exchange the code for a session
     await supabase.auth.exchangeCodeForSession(code)
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
     if (session) {
       // Check if user email exists in Directory
       const { data: directoryData, error: directoryError } = await supabase
-        .from("Directory")
+        .from("directory")
         .select("id")
-        .eq("email", session.user.email!)
+        .eq("email", session.user.email!) 
         .single()
 
       if (directoryError || !directoryData) {
@@ -37,7 +37,11 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if user already exists in Accounts table using auth_user_id
-      const { data: existingAccount } = await supabase.from("Accounts").select("auth_user_id").eq("auth_user_id", session.user.id).single()
+      const { data: existingAccount } = await supabase
+        .from("accounts")
+        .select("auth_user_id")
+        .eq("auth_user_id", session.user.id)
+        .single()
 
       if (!existingAccount) {
         // Send welcome email - updated content

@@ -5,91 +5,85 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/layout/page-header"
 import { PageFooter } from "@/components/layout/page-footer"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
 export default function SetupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
 
   useEffect(() => {
     async function setupUserProfile() {
       try {
-        // Get the current session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
         if (sessionError || !session) {
           throw new Error("No active session found")
         }
 
-        // Get registration data from localStorage
         const registrationDataStr = localStorage.getItem("registrationData")
         if (!registrationDataStr) {
           throw new Error("Registration data not found")
         }
-
         const registrationData = JSON.parse(registrationDataStr)
 
-        // Check if user email matches the one in Directory
         const { data: directoryData, error: directoryError } = await supabase
-          .from("Directory")
+          .from("directory")
           .select("id, email")
-          .eq("email", session.user.email)
+          .eq("email", session.user.email!)
           .single()
 
         if (directoryError || !directoryData) {
+          toast.error("Your email is not found in the official directory. Please contact an administrator.")
           router.push("/unauthorized")
           return
         }
 
-        // Check if user already exists in Accounts table using auth_user_id
-        const { data: existingAccount } = await supabase.from("Accounts").select("*").eq("auth_user_id", session.user.id).single()
+        const { data: existingAccount } = await supabase
+          .from("accounts")
+          .select("user_type, account_id")
+          .eq("auth_user_id", session.user.id)
+          .single()
 
         if (existingAccount) {
-          // User account already exists, redirect based on role
+          toast.info("Account already set up.")
           if (existingAccount.user_type === "admin") {
             router.push("/admin/attendance-overview")
           } else {
-            router.push("/attendance-overview")
+            router.push("/attendance-form")
           }
           return
         }
 
-        // Prepare user data for Accounts table
-        const accountData = {
-          id: directoryData.id,
+        const accountToInsert = {
+          directory_id: directoryData.id,
           auth_user_id: session.user.id,
-          name: session.user.user_metadata.full_name || session.user.user_metadata.name || "User",
-          user_type: registrationData.userType,
+          name: session.user.user_metadata.full_name || session.user.user_metadata.name || registrationData.full_name || "User",
+          user_type: registrationData.user_type,
           role: registrationData.adminRole || null,
           committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
-          is_execboard: registrationData.isExecutiveBoard || false,
+          is_execboard: registrationData.is_execboard || false,
+          is_sechead: registrationData.is_sechead || false,
         }
 
-        // Insert user data into Accounts table
-        const { error: insertError } = await supabase.from("Accounts").upsert(accountData)
+        const { error: insertError } = await supabase.from("accounts").upsert(accountToInsert)
 
         if (insertError) {
           throw insertError
         }
 
-        // Clear registration data
         localStorage.removeItem("registrationData")
-
-        // Redirect based on user type
         toast.success("Registration successful!")
-        if (accountData.user_type === "admin") {
+        if (accountToInsert.user_type === "admin") {
           router.push("/admin/attendance-overview")
         } else {
-          router.push("/attendance-overview")
+          router.push("/attendance-form")
         }
       } catch (error) {
         console.error("Setup error:", error)
-        toast.error("Failed to complete registration")
+        toast.error(`Failed to complete registration: ${(error as Error).message}`)
         router.push("/register")
       } finally {
         setIsLoading(false)
@@ -97,13 +91,12 @@ export default function SetupPage() {
     }
 
     setupUserProfile()
-  }, [router])
+  }, [router, supabase])
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
-
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="w-full max-w-md border-2 border-[#09331f]/20 shadow-lg dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="text-center">
@@ -119,7 +112,6 @@ export default function SetupPage() {
             </CardContent>
           </Card>
         </main>
-
         <PageFooter />
       </div>
     </div>

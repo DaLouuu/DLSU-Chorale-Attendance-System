@@ -1,5 +1,7 @@
+import type { Status } from "./database.types"
+
 export interface ExcuseItem {
-  id: string
+  id: number
   name: string
   voiceSection: string
   voiceNumber: number
@@ -7,17 +9,15 @@ export interface ExcuseItem {
   date: string
   reason: string
   notes?: string
-  profileImage: string
 }
 
 export interface HistoryItem {
-  id: string
+  id: number
   name: string
   voiceSection: string
   voiceNumber: number
   type: string
   date: string
-  status: "APPROVED" | "DECLINED"
+  status: Status
   declineReason?: string
-  profileImage: string
 }

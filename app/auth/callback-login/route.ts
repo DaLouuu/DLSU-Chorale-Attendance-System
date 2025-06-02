@@ -1,49 +1,54 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import type { Database } from "@/types/database.types"
+// import type { Database } from "@/types/database.types"
+import { createClient } from "@/utils/supabase/server"
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
 
   if (code) {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
+    const supabase = createClient()
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code) // Store error for checking
 
-    // Exchange the code for a session
-    await supabase.auth.exchangeCodeForSession(code)
+    if (exchangeError) {
+      console.error("Error exchanging code for session:", exchangeError)
+      // Redirect to login with an error message or a generic error page
+      return NextResponse.redirect(new URL("/login?error=auth_failed", request.url))
+    }
 
-    // Get the current session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (session) {
-      // Check if user exists in Directory
-      const { data: directoryData, error: directoryError } = await supabase
-        .from("Directory")
-        .select("id")
-        .eq("email", session.user.email!) // Assuming email must exist
-        .single()
+      // Check if user email exists in Directory (assuming email must exist)
+      // For now, we'll proceed as if this check passes or is handled later, per user instruction.
+      // const { data: directoryData, error: directoryError } = await supabase
+      //   .from("directory")
+      //   .select("id")
+      //   .eq("email", session.user.email!)
+      //   .single()
 
-      if (directoryError || !directoryData) {
-        return NextResponse.redirect(new URL("/unauthorized", request.url))
-      }
+      // if (directoryError || !directoryData) {
+      //   return NextResponse.redirect(new URL("/unauthorized", request.url))
+      // }
 
       // Check if user exists in Accounts table using auth_user_id
       const { data: accountData, error: accountError } = await supabase
-        .from("Accounts")
-        .select("user_type") // Only select what's needed for redirection
+        .from("accounts")
+        .select("user_type") 
         .eq("auth_user_id", session.user.id)
         .single()
 
-      if (accountError || !accountData) {
-        // User account doesn't exist in Accounts table, or error fetching
-        // This could mean they registered but setup didn't complete, or they never registered.
-        // Redirecting to /register allows them to start over or complete setup if /auth/setup handles existing Directory entries.
-        return NextResponse.redirect(new URL("/register", request.url))
+      if (accountError && accountError.code !== 'PGRST116') { // PGRST116 means no rows found, which is not an unexpected DB error here
+        console.error("Database error fetching account:", accountError)
+        // Consider redirecting to a generic error page or login with error
+        return NextResponse.redirect(new URL("/login?error=db_error", request.url))
+      }
+
+      if (!accountData) {
+        // User account doesn't exist in Accounts table, but auth user exists and is in Directory (implicitly, for now).
+        // Redirect to /auth/setup to complete profile creation.
+        return NextResponse.redirect(new URL("/auth/setup", request.url))
       }
 
       // User account exists, redirect based on user_type
@@ -55,6 +60,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fallback redirect
+  // Fallback redirect if no code, or session not established after code exchange
   return NextResponse.redirect(new URL("/login", request.url))
 }

@@ -1,29 +1,34 @@
 "use client"
 
 import { LoginForm } from "@/components/auth/login-form"
-import { PageHeader } from "@/components/layout/page-header"
-import { PageFooter } from "@/components/layout/page-footer"
+import { GalleryBackground } from "@/components/ui/gallery-background"
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#E0E7FF] via-[#F0F3FF] to-[#E5F9F1] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="flex min-h-screen flex-col items-center justify-center px-4">
-        {/* <PageHeader /> */}
-        {/* You might want a simpler header or no header on the login page */}
-        <main className="flex w-full flex-1 flex-col items-center justify-center py-8">
-          <div className="mb-8 text-center">
-            {/* You can add your logo or app name here */}
-            <h1 className="text-4xl font-bold tracking-tight text-[#09331f] dark:text-white">
-              DLSU Chorale
-            </h1>
-            <p className="mt-2 text-lg text-gray-700 dark:text-gray-300">
-              Attendance Management System
-            </p>
+    <div className="min-h-screen">
+      <GalleryBackground />
+      <div className="flex min-h-screen flex-col relative z-10">
+        <header className="bg-[#09331f] py-8 shadow-md">
+          <div className="container mx-auto px-4">
+            <h1 className="text-2xl font-bold text-white">DLSU Chorale Portal</h1>
           </div>
-          <LoginForm />
+        </header>
+
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
+          <div className="w-full max-w-md">
+            <div className="flex flex-col items-center space-y-6 text-center mb-8">
+              <h1 className="text-3xl font-bold tracking-tight text-white">Welcome Back!</h1>
+              <p className="text-sm text-white/80">Sign in to access the Attendance System.</p>
+            </div>
+            <LoginForm />
+          </div>
         </main>
-        {/* <PageFooter /> */}
-        {/* Footer might also be simplified or omitted here */}
+
+        <footer className="bg-[#1B1B1B] py-6 shadow-inner mt-auto">
+          <div className="container mx-auto px-4 text-center text-white text-sm">
+            &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
+          </div>
+        </footer>
       </div>
     </div>
   )

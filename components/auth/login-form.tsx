@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client" // Import the browser client
+import { signInWithEmailPassword } from "@/lib/auth-actions" // Import the server action
 
 export function LoginForm() {
   const router = useRouter()
@@ -26,32 +27,24 @@ export function LoginForm() {
     }
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const formData = new FormData()
+      formData.append("email", email)
+      formData.append("password", password)
 
-      if (error) {
-        // More specific error handling based on Supabase error codes can be added here
-        if (error.message === "Invalid login credentials") {
-          toast.error("Invalid email or password. Please try again.")
-        } else {
-          toast.error(error.message || "Failed to login.")
-        }
-        throw error
+      const result = await signInWithEmailPassword(formData)
+
+      if (result?.error) { // Server action will redirect on success, so only handle error here
+        toast.error(result.error.message || "Failed to login. Please try again.")
+        console.error("Login error from server action:", result.error)
       }
-
-      toast.success("Login successful! Redirecting...")
-      // The middleware should handle redirection based on session and account status.
-      // Forcing a reload or router.push might sometimes conflict with middleware redirects.
-      // A simple router.refresh() might be enough if the middleware handles the destination.
-      router.refresh() // This will re-fetch server components and re-run middleware
-      // Or, if you know the primary landing spot after login and Accounts setup is done:
-      // router.push('/dashboard'); // Or /attendance-form based on expected role
+      // No toast.success here, as successful login redirects from server action.
+      // router.refresh() or router.push() are also not strictly needed here due to server-side redirect.
 
     } catch (error: any) {
-      console.error("Login error:", error)
-      // Toast for error is already handled above if it's a Supabase auth error
+      // This catch block is for unexpected errors during the client-side part 
+      // or if the server action itself throws an unhandled exception (not a returned error object).
+      console.error("Unexpected login error:", error)
+      toast.error("An unexpected error occurred during login.")
     } finally {
       setIsLoading(false)
     }
@@ -78,7 +71,7 @@ export function LoginForm() {
 
   return (
     <Card className="w-full max-w-md border-2 border-[#09331f]/20 shadow-lg bg-white/90 backdrop-blur-sm dark:bg-gray-900 dark:border-gray-700">
-      <CardHeader className="space-y-1 text-center">
+      <CardHeader className="space-y-1 text-center p-8">
         <CardTitle className="text-2xl font-bold text-[#09331f] dark:text-white">Welcome Back!</CardTitle>
         <CardDescription className="text-gray-600 dark:text-gray-300">
           Enter your credentials to access your account.

@@ -24,6 +24,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
+import { signOutUser } from "@/lib/auth-actions"
 
 // Attendance status types
 type AttendanceStatus = "recorded" | "pending-retry" | "pending-down"
@@ -45,38 +46,59 @@ export default function DashboardPage() {
         setLoadingUserRole(true)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-        if (sessionError || !session) {
-          router.push("/login")
+        if (sessionError) {
+          console.error("[DashboardPage] Session error:", sessionError)
+          setUserRole("unknown")
+          router.push("/login?error=session_error_dashboard")
+          return
+        }
+        if (!session) {
+          setUserRole("unknown")
+          router.push("/login?error=no_session_dashboard")
           return
         }
 
         const { data: accountData, error: accountError } = await supabase
           .from("accounts")
-          .select("user_type")
+          .select("user_type, name") // Added name for greeting potential
           .eq("auth_user_id", session.user.id)
           .single()
 
-        if (accountError || !accountData) {
-          console.error("Error fetching user account data:", accountError)
+        if (accountError) {
+          console.error("[DashboardPage] Error fetching user account data:", accountError)
           setUserRole("unknown")
-          if (accountError && accountError.code === 'PGRST116') {
-             router.push("/auth/setup")
-             return
+          if (accountError.code === 'PGRST116') { // No rows found
+            router.push("/auth/setup?from=dashboard_no_account")
+            return
+          } else {
+            // For other DB errors, maybe don't redirect to setup, could show an error or redirect to login
+            console.error("[DashboardPage] Other DB error fetching account, redirecting to login.")
+            router.push("/login?error=db_error_dashboard")
           }
           return
         }
 
+        if (!accountData) {
+            // This case should ideally be caught by PGRST116, but as a fallback
+            setUserRole("unknown")
+            router.push("/auth/setup?from=dashboard_no_account_fallback")
+            return
+        }
+
         setUserRole(accountData.user_type === "admin" ? "admin" : "member")
+        // Potentially set user name here if you want to display it from accountData.name
       } catch (error) {
-        console.error("Error in fetchUserRole:", error)
+        console.error("[DashboardPage] Outer catch error in fetchUserRole:", error)
         setUserRole("unknown")
+        // Redirect to a generic error page or login
+        router.push("/login?error=unknown_dashboard_error")
       } finally {
         setLoadingUserRole(false)
       }
     }
 
     fetchUserRole()
-  }, [router, supabase])
+  }, [router, supabase]) // Dependencies are router and supabase instance
 
   // Update date every minute
   useEffect(() => {
@@ -108,8 +130,7 @@ export default function DashboardPage() {
 
   // Function to handle sign out
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/login")
+    await signOutUser()
   }
 
   // Render attendance status box based on current status

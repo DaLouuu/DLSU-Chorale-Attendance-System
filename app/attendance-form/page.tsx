@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { DashboardNav } from "@/components/layout/dashboard-nav"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 
 export default function AttendanceExcusePage() {
   const router = useRouter()
+  const supabase = createClient()
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -21,25 +22,40 @@ export default function AttendanceExcusePage() {
       try {
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession()
 
-        if (!session) {
+        if (sessionError || !session) {
+          console.error("AttendanceExcusePage: Session error or no session", sessionError)
           router.push("/login")
           return
         }
 
-        const { data: userData } = await supabase.from("Users").select("is_admin").eq("id", session.user.id).single()
+        const { data: accountData, error: accountError } = await supabase
+          .from("accounts")
+          .select("user_type")
+          .eq("auth_user_id", session.user.id)
+          .single()
 
-        setIsAdmin(userData?.is_admin || false)
+        if (accountError) {
+          console.error("AttendanceExcusePage: Error fetching account data:", accountError)
+          if (accountError.code === 'PGRST116') {
+             console.warn("AttendanceExcusePage: No account found for user, redirecting to setup.")
+             router.push("/auth/setup?from=attendance-form_no_account")
+             return;
+          }
+        }
+
+        setIsAdmin(accountData?.user_type === "admin" || false)
         setLoading(false)
       } catch (error) {
-        console.error("Error checking user role:", error)
+        console.error("AttendanceExcusePage: Error in checkUserRole catch block:", error)
         setLoading(false)
       }
     }
 
     checkUserRole()
-  }, [router])
+  }, [router, supabase])
 
   if (loading) {
     return (

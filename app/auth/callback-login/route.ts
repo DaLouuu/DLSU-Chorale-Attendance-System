@@ -9,57 +9,74 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = createClient()
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code) // Store error for checking
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
-      console.error("Error exchanging code for session:", exchangeError)
-      // Redirect to login with an error message or a generic error page
+      console.error("[CallbackLogin] Error exchanging code for session:", exchangeError)
       return NextResponse.redirect(new URL("/login?error=auth_failed", request.url))
     }
 
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError) {
+      console.error("[CallbackLogin] Error getting session:", sessionError)
+      return NextResponse.redirect(new URL("/login?error=session_failed", request.url))
+    }
 
     if (session) {
-      // Check if user email exists in Directory (assuming email must exist)
-      // For now, we'll proceed as if this check passes or is handled later, per user instruction.
-      // const { data: directoryData, error: directoryError } = await supabase
-      //   .from("directory")
-      //   .select("id")
-      //   .eq("email", session.user.email!)
-      //   .single()
+      // 1. Check Directory
+      const { data: directoryData, error: directoryError } = await supabase
+        .from("directory")
+        .select("id") // We need directory.id for potential setup
+        .eq("email", session.user.email!)
+        .single()
 
-      // if (directoryError || !directoryData) {
-      //   return NextResponse.redirect(new URL("/unauthorized", request.url))
-      // }
+      if (directoryError && directoryError.code !== 'PGRST116') {
+        console.error("[CallbackLogin] Directory check database error:", directoryError)
+        return NextResponse.redirect(new URL("/login?error=directory_check_failed", request.url))
+      }
 
-      // Check if user exists in Accounts table using auth_user_id
+      if (!directoryData) {
+        console.warn(`[CallbackLogin] Unauthorized OAuth login attempt: email ${session.user.email} not in Directory.`)
+        // Consider signing them out if you want to be strict, as they authenticated but are not in the directory
+        // await supabase.auth.signOut();
+        return NextResponse.redirect(new URL("/unauthorized?reason=email_not_in_directory", request.url))
+      }
+      console.log("[CallbackLogin] User email found in directory:", directoryData)
+
+      // 2. Check Accounts
       const { data: accountData, error: accountError } = await supabase
         .from("accounts")
-        .select("user_type") 
+        .select("user_type, auth_user_id") // Select auth_user_id to confirm it is indeed this user's account
         .eq("auth_user_id", session.user.id)
         .single()
 
-      if (accountError && accountError.code !== 'PGRST116') { // PGRST116 means no rows found, which is not an unexpected DB error here
-        console.error("Database error fetching account:", accountError)
-        // Consider redirecting to a generic error page or login with error
-        return NextResponse.redirect(new URL("/login?error=db_error", request.url))
+      if (accountError && accountError.code !== 'PGRST116') {
+        console.error("[CallbackLogin] Accounts check database error:", accountError)
+        return NextResponse.redirect(new URL("/login?error=accounts_check_failed", request.url))
       }
 
-      if (!accountData) {
-        // User account doesn't exist in Accounts table, but auth user exists and is in Directory (implicitly, for now).
-        // Redirect to /auth/setup to complete profile creation.
+      if (accountData) {
+        // User is in Directory AND Accounts, proceed to dashboard
+        console.log("[CallbackLogin] User found in Accounts. User type:", accountData.user_type)
+        if (accountData.user_type === "admin") {
+          return NextResponse.redirect(new URL("/admin/attendance-overview", request.url))
+        } else {
+          return NextResponse.redirect(new URL("/attendance-form", request.url)) // Or your main member dashboard
+        }
+      } else {
+        // User is in Directory BUT NOT in Accounts, needs setup
+        // The /auth/setup page will use directoryData.id if needed (passed via session or re-fetched)
+        console.log("[CallbackLogin] User in Directory but not Accounts. Redirecting to /auth/setup.")
+        // No need to pass registrationData in localStorage here, as setup page handles fetching directory ID.
         return NextResponse.redirect(new URL("/auth/setup", request.url))
       }
-
-      // User account exists, redirect based on user_type
-      if (accountData.user_type === "admin") {
-        return NextResponse.redirect(new URL("/admin/attendance-overview", request.url))
-      } else {
-        return NextResponse.redirect(new URL("/attendance-form", request.url)) // Default member page
-      }
+    } else {
+      console.warn("[CallbackLogin] No session after code exchange.")
+      return NextResponse.redirect(new URL("/login?error=no_session", request.url))
     }
   }
 
-  // Fallback redirect if no code, or session not established after code exchange
-  return NextResponse.redirect(new URL("/login", request.url))
+  console.warn("[CallbackLogin] No code found in request URL.")
+  return NextResponse.redirect(new URL("/login?error=no_code", request.url))
 }

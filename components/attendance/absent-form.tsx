@@ -9,23 +9,23 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/hooks/use-toast"
 import { ExcuseReasonOptions } from "@/components/attendance/excuse-reason-options"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 
 export function AbsentForm() {
+  const supabase = createClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [absentDate, setAbsentDate] = useState("")
   const [excuseType, setExcuseType] = useState("")
   const [absentReason, setAbsentReason] = useState("")
   const [absentDescription, setAbsentDescription] = useState("")
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Validate form
     if (!absentDate || !absentReason || !excuseType) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields: Date, Reason, and Type of Excuse.",
         variant: "destructive",
       })
       return
@@ -34,42 +34,68 @@ export function AbsentForm() {
     setIsSubmitting(true)
 
     try {
-      // Get current user
       const {
         data: { session },
+        error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (!session) {
-        throw new Error("You must be logged in to submit an excuse")
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to submit an excuse. Please login again.",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
       }
 
-      // Submit excuse to database
-      const { error } = await supabase.from("ExcuseRequests").insert({
-        userID: session.user.id,
-        date: absentDate,
+      const { data: accountData, error: accountError } = await supabase
+        .from("accounts")
+        .select("account_id")
+        .eq("auth_user_id", session.user.id)
+        .single()
+
+      if (accountError || !accountData) {
+        console.error("Error fetching account_id:", accountError)
+        toast({
+          title: "Error",
+          description: "Could not find your account information. Please ensure your account is fully set up or contact support.",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      const accountIdFk = accountData.account_id
+
+      const { error: insertError } = await supabase.from("excuserequests").insert({
+        account_id_fk: accountIdFk,
+        date_of_absence: absentDate,
         reason: absentReason,
         status: "Pending",
-        notes: absentDescription,
-        type: excuseType,
+        details: absentDescription,
+        excuse_type: excuseType,
       })
 
-      if (error) throw error
+      if (insertError) {
+        console.error("Error inserting excuse request:", insertError)
+        throw insertError
+      }
 
       toast({
         title: "Success",
         description: `Your ${excuseType.toLowerCase()} excuse has been submitted successfully`,
       })
 
-      // Reset form
       setAbsentDate("")
       setExcuseType("")
       setAbsentReason("")
       setAbsentDescription("")
     } catch (error) {
-      console.error("Error submitting excuse:", error)
+      console.error("Error submitting excuse in catch block:", error)
       toast({
         title: "Error",
-        description: "Failed to submit excuse. Please try again.",
+        description: `Failed to submit excuse: ${(error as Error).message || "Please try again."}`,
         variant: "destructive",
       })
     } finally {

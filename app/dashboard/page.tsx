@@ -22,66 +22,84 @@ import {
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
+import { signOutUser } from "@/lib/auth-actions"
 
 // Attendance status types
 type AttendanceStatus = "recorded" | "pending-retry" | "pending-down"
-type UserRole = "member" | "admin"
+type UserRole = "member" | "admin" | "unknown"
 
 export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>("recorded")
-  const [userRole, setUserRole] = useState<UserRole>("member")
-  const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<UserRole>("unknown")
+  const [loadingUserRole, setLoadingUserRole] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
-  // Check user verification status
-  /*useEffect(() => {
-    const checkUserVerification = async () => {
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
       try {
-        setLoading(true)
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        setLoadingUserRole(true)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
+        if (sessionError) {
+          console.error("[DashboardPage] Session error:", sessionError)
+          setUserRole("unknown")
+          router.push("/login?error=session_error_dashboard")
+          return
+        }
         if (!session) {
-          router.push("/login")
+          setUserRole("unknown")
+          router.push("/login?error=no_session_dashboard")
           return
         }
 
-        // Get user data from Users table
-        const { data: userData, error } = await supabase
-          .from("Users")
-          .select("verification, is_admin")
-          .eq("id", session.user.id)
+        const { data: accountData, error: accountError } = await supabase
+          .from("accounts")
+          .select("user_type, name") // Added name for greeting potential
+          .eq("auth_user_id", session.user.id)
           .single()
 
-        if (error || !userData) {
-          console.error("Error fetching user data:", error)
-          router.push("/pending-verification")
+        if (accountError) {
+          console.error("[DashboardPage] Error fetching user account data:", accountError)
+          setUserRole("unknown")
+          if (accountError.code === 'PGRST116') { // No rows found
+            router.push("/auth/setup?from=dashboard_no_account")
+            return
+          } else {
+            // For other DB errors, maybe don't redirect to setup, could show an error or redirect to login
+            console.error("[DashboardPage] Other DB error fetching account, redirecting to login.")
+            router.push("/login?error=db_error_dashboard")
+          }
           return
         }
 
-        // Check verification status
-        if (!userData.verification) {
-          router.push("/pending-verification")
-          return
+        if (!accountData) {
+            // This case should ideally be caught by PGRST116, but as a fallback
+            setUserRole("unknown")
+            router.push("/auth/setup?from=dashboard_no_account_fallback")
+            return
         }
 
-        // Set user role based on admin status
-        setUserRole(userData.is_admin ? "admin" : "member")
-        setLoading(false)
+        setUserRole(accountData.user_type === "admin" ? "admin" : "member")
+        // Potentially set user name here if you want to display it from accountData.name
       } catch (error) {
-        console.error("Error checking verification:", error)
-        setLoading(false)
+        console.error("[DashboardPage] Outer catch error in fetchUserRole:", error)
+        setUserRole("unknown")
+        // Redirect to a generic error page or login
+        router.push("/login?error=unknown_dashboard_error")
+      } finally {
+        setLoadingUserRole(false)
       }
     }
 
-    checkUserVerification()
-  }, [router])
-*/
+    fetchUserRole()
+  }, [router, supabase]) // Dependencies are router and supabase instance
+
   // Update date every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -107,13 +125,12 @@ export default function DashboardPage() {
 
   // Function to toggle user role
   const toggleUserRole = () => {
-    setUserRole(userRole === "member" ? "admin" : "member")
+    setUserRole(userRole === "member" ? "admin" : userRole === "admin" ? "member" : "unknown")
   }
 
   // Function to handle sign out
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/login")
+    await signOutUser()
   }
 
   // Render attendance status box based on current status
@@ -162,17 +179,16 @@ export default function DashboardPage() {
     }
   }
 
-  /*
-  if (loading) {
+  if (loadingUserRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#09331f] dark:border-[#0a4429] mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading user data...</p>
         </div>
       </div>
     )
-  }*/
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -215,25 +231,18 @@ export default function DashboardPage() {
                       Dashboard
                     </Link>
                     <Link
-                      href="/attendance"
+                      href={userRole === "admin" ? "/admin/attendance-overview" : "/attendance-overview"}
                       className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Attendance
+                      Attendance Overview
                     </Link>
-                    <Link
-                      href="/performances"
+                     <Link
+                      href={userRole === "admin" ? "/admin/all-events" : "/performances"}
                       className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Performances
-                    </Link>
-                    <Link
-                      href="/events"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Events
+                      {userRole === "admin" ? "All Events (Admin)" : "Performances & Events"}
                     </Link>
                     <Link
                       href="/notifications"
@@ -242,13 +251,31 @@ export default function DashboardPage() {
                     >
                       Notifications
                     </Link>
-                    <Link
-                      href="/members"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Members
-                    </Link>
+                    {userRole === "admin" && (
+                      <>
+                        <Link
+                          href="/admin/member-management"
+                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Member Management
+                        </Link>
+                        <Link
+                          href="/admin/excuse-management"
+                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Excuse Management
+                        </Link>
+                        <Link
+                          href="/admin/directory-management"
+                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Directory Management
+                        </Link>
+                      </>
+                    )}
                     <Link
                       href="/resources"
                       className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
@@ -264,7 +291,7 @@ export default function DashboardPage() {
                       className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      My Account
+                      Profile
                     </Link>
                     <Link
                       href="/settings"
@@ -274,16 +301,16 @@ export default function DashboardPage() {
                       Settings
                     </Link>
                     <button
-                      onClick={() => {
-                        setIsMenuOpen(false)
-                        handleSignOut()
-                      }}
-                      className="block w-full text-left py-3 font-medium text-red-600 dark:text-red-400"
+                      onClick={handleSignOut}
+                      className="w-full text-left py-3 font-medium text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2"
                     >
                       Sign Out
                     </button>
                   </div>
                 </nav>
+                <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
+                  DLSU Chorale Attendance v1.0
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -291,270 +318,125 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6">
-        {/* Admin Indicator */}
-        {userRole === "admin" && (
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-[#09331f] text-white px-3 py-1">Admin Dashboard</Badge>
-              <span className="text-sm text-gray-500 dark:text-gray-400">You have administrative privileges</span>
-            </div>
-          </div>
-        )}
-
-        {/* Date and Attendance Status */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          {/* Mobile date display (3-line format like desktop) */}
-          <div className="flex sm:hidden w-full gap-3 items-center">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2 text-center w-[80px] h-[80px] flex flex-col justify-center flex-shrink-0">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">TODAY</div>
-              <div className="text-xl font-bold dark:text-white">{dayName}</div>
-              <div className="text-sm font-medium dark:text-gray-300">{monthDay}</div>
-            </div>
-            <div className="flex-1">{renderAttendanceStatus()}</div>
-          </div>
-
-          {/* Desktop date display (original 3-line format) */}
-          <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 text-center w-full sm:w-auto">
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-              TODAY
-            </div>
-            <div className="text-2xl font-bold dark:text-white">{dayName}</div>
-            <div className="text-lg font-medium dark:text-gray-300">{monthDay}</div>
-          </div>
-
-          {/* Desktop attendance status */}
-          <div className="hidden sm:block flex-1">{renderAttendanceStatus()}</div>
-        </div>
-
-        {/* Admin Actions Section - Only visible for admin users */}
-        {userRole === "admin" && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-[#09331f] dark:text-[#0a4429]" />
-              Admin Actions
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Excuse Approval */}
-              <Link href="/admin/excuse-approval" className="group">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                      <ClipboardList className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Excuse Approval</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Review and approve member attendance excuses
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Attendance Overview */}
-              <Link href="/admin/attendance-overview" className="group">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                      <Users className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Attendance Overview</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        View and manage member attendance records
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Coming Soon */}
-              <div className="group">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-gray-400 dark:text-gray-500">
-                      <Shield className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Coming Soon</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Additional admin features will be available soon
-                      </p>
-                    </div>
-                  </div>
-                </div>
+      <main className="flex-1 container mx-auto px-4 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Date and Attendance Status */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex items-center gap-4">
+              <div className="text-center flex-shrink-0 w-20">
+                <div className="text-3xl font-bold text-[#09331f] dark:text-green-400">{dayName}</div>
+                <div className="text-lg text-gray-600 dark:text-gray-300">{monthDay}</div>
+              </div>
+              <div className="border-l border-gray-200 dark:border-gray-700 pl-4 flex-1 flex flex-col justify-center">
+                <div className="font-semibold text-lg text-gray-800 dark:text-white">Today</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Good day, Chorale member!</div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Regular Actions Section */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Actions</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Manual Attendance Logging */}
-            <Link href="/attendance/manual" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                <div className="flex items-start gap-4">
-                  <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                    <Edit3 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Manual Attendance Logging</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Record your attendance manually with Word of the Day
+            {/* Conditional Welcome or Attendance Action Card */}
+            {userRole === "member" && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">Attendance</h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        Ready to mark your attendance for today's rehearsal?
                     </p>
-                  </div>
+                    <Link href="/attendance-form" passHref>
+                        <Button className="w-full bg-[#09331f] hover:bg-[#0a4429] text-white">
+                            Go to Attendance Form
+                        </Button>
+                    </Link>
                 </div>
-              </div>
-            </Link>
+            )}
 
-            {/* Submit Absence/Late Excuse */}
-            <Link href="/attendance-form" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                <div className="flex items-start gap-4">
-                  <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                    <FileText className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Submit Attendance Excuse</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Submit an excuse for absence, tardiness, or stepping out
+            {userRole === "admin" && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">Admin Dashboard</h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        Access admin functionalities and manage attendance records.
                     </p>
-                  </div>
+                    <Link href="/admin/attendance-overview" passHref>
+                         <Button className="w-full bg-[#b28900] hover:bg-[#c59a00] text-white">
+                            Go to Admin Overview
+                        </Button>
+                    </Link>
                 </div>
-              </div>
-            </Link>
+            )}
+          </div>
 
-            {/* Sign Up for Performance Requests */}
-            <Link href="/performances/requests" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                <div className="flex items-start gap-4">
-                  <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                    <Music className="h-6 w-6" />
-                  </div>
+          {/* Right Column: Quick Links and Notifications (simplified) */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                <Bell className="h-5 w-5 mr-2 text-[#09331f] dark:text-green-400" />
+                Recent Notifications
+              </h2>
+              <div className="space-y-3">
+                {/* Example Notification */}
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md flex items-start gap-2">
+                  <Music className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">PR Sign-Ups</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Sign up for upcoming performances</p>
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                      New Repertoire Added: "Bohemian Rhapsody"
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">2 hours ago</p>
                   </div>
                 </div>
-              </div>
-            </Link>
-
-            {/* My Profile */}
-            <Link href="/profile" className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200 hover:shadow-md hover:border-[#09331f]/30 hover:bg-[#09331f]/5 dark:hover:bg-[#09331f]/10">
-                <div className="flex items-start gap-4">
-                  <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] group-hover:bg-[#09331f]/20 dark:group-hover:bg-[#09331f]/30">
-                    <User className="h-6 w-6" />
-                  </div>
+                <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-md flex items-start gap-2">
+                  <Calendar className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">My Profile</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">View and edit your profile information</p>
+                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                      Upcoming Event: Annual Concert Rehearsal
+                    </p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400">Tomorrow, 6 PM</p>
                   </div>
                 </div>
-              </div>
-            </Link>
-
-            {/* Coming Soon 1 */}
-            <div className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-gray-400 dark:text-gray-500">
-                    <Calendar className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Coming Soon</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">New features will be available soon</p>
-                  </div>
-                </div>
+                <Link href="/notifications" className="text-sm text-[#09331f] dark:text-green-400 hover:underline font-medium">
+                  View all notifications
+                </Link>
               </div>
             </div>
 
-            {/* Coming Soon 2 */}
-            <div className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full transition-all duration-200">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-gray-400 dark:text-gray-500">
-                    <Bell className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Coming Soon</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">New features will be available soon</p>
-                  </div>
-                </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                <ClipboardList className="h-5 w-5 mr-2 text-[#09331f] dark:text-green-400" />
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link href={userRole === "admin" ? "/admin/excuse-management" : "/attendance/excuse-form"} passHref>
+                  <Button variant="outline" className="w-full justify-start border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <FileText className="h-4 w-4 mr-2" />
+                    {userRole === "admin" ? "Manage Excuses" : "Submit Excuse Letter"}
+                  </Button>
+                </Link>
+                <Link href="/performances" passHref>
+                  <Button variant="outline" className="w-full justify-start border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <Music className="h-4 w-4 mr-2" />
+                    View Performances
+                  </Button>
+                </Link>
+                <Link href="/profile" passHref>
+                   <Button variant="outline" className="w-full justify-start border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <User className="h-4 w-4 mr-2" />
+                    My Profile
+                  </Button>
+                </Link>
+                {userRole === "admin" && (
+                  <Link href="/admin/member-management" passHref>
+                     <Button variant="outline" className="w-full justify-start border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Members
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Upcoming Events Preview */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Upcoming Events</h2>
-            <Link href="/events" className="text-sm font-medium text-[#09331f] dark:text-[#0a4429] hover:underline">
-              View All
-            </Link>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
-            <div className="flex gap-4">
-              <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] h-fit">
-                <Calendar className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 dark:text-white">Weekly Rehearsal</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Regular practice session</p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
-                    Tomorrow, 5:00 PM
-                  </span>
-                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
-                    Br. Andrew Gonzalez Hall
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex gap-4">
-              <div className="bg-[#09331f]/10 dark:bg-[#09331f]/20 rounded-lg p-3 text-[#09331f] dark:text-[#0a4429] h-fit">
-                <Music className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 dark:text-white">Christmas Concert</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Annual holiday performance</p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
-                    Dec 15, 7:00 PM
-                  </span>
-                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
-                    Teresa Yuchengco Auditorium
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Demo Controls */}
-        <div className="mb-8 flex flex-wrap gap-2">
-          <Button onClick={cycleAttendanceStatus} variant="outline" className="text-sm">
-            Toggle Attendance Status (Demo)
-          </Button>
-          <Button onClick={toggleUserRole} variant="outline" className="text-sm">
-            Toggle User Role (Demo): {userRole === "admin" ? "Admin" : "Member"}
-          </Button>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#1B1B1B] py-4 mt-auto">
-        <div className="container mx-auto px-4 text-center text-white text-sm">
+      {/* Footer (Simplified) */}
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
           &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
         </div>
       </footer>

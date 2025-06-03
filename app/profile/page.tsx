@@ -12,20 +12,21 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { Pencil, Save, X } from "lucide-react"
+import { format } from 'date-fns'
 
 interface UserProfile {
-  id: string
-  name: string
-  role: string
+  account_id: number
+  auth_user_id: string
+  name: string | null
+  role: string | null
   committee: string | null
   section: string | null
-  is_admin: boolean
-  is_performing: boolean
-  is_executive_board: boolean
-  admin_role: string | null
+  user_type: string | null
+  is_execboard: boolean | null
+  is_sechead: boolean | null
   email: string
   birthday: string | null
   id_number: string | null
@@ -35,74 +36,122 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const supabase = createClient()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
+  const [editedProfile, setEditedProfile] = useState<Partial<Pick<UserProfile, 'name' | 'committee' | 'section' | 'birthday' | 'degree_program' | 'contact_number'>>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   useEffect(() => {
     async function fetchProfile() {
+      console.log("[ProfilePage] Fetching profile...")
       try {
-        // Get current user
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession()
 
         if (sessionError || !session) {
-          throw new Error("No active session")
+          console.error("[ProfilePage] No active session", sessionError)
+          toast.error("No active session. Please login.")
+          setLoading(false)
+          return
         }
+        console.log("[ProfilePage] Session found for user:", session.user.id)
 
-        // Get user profile from Users table
-        const { data: userData, error: userError } = await supabase
-          .from("Users")
-          .select("*")
-          .eq("id", session.user.id)
+        const { data: accountData, error: accountError } = await supabase
+          .from("accounts")
+          .select(`
+            account_id,
+            auth_user_id,
+            name,
+            role,
+            committee,
+            section,
+            user_type,
+            is_execboard,
+            is_sechead,
+            profile_image_url, 
+            contact_number, 
+            degree_program, 
+            birthday, 
+            directory_id
+          `)
+          .eq("auth_user_id", session.user.id)
           .single()
 
-        if (userError) {
-          throw userError
+        if (accountError) {
+          console.error("[ProfilePage] Error fetching account data:", accountError)
+          if (accountError.code === 'PGRST116') {
+            toast.error("Profile data not found. Please complete setup.")
+          } else {
+            toast.error("Failed to load profile data.")
+          }
+          setLoading(false)
+          return
+        }
+        console.log("[ProfilePage] Account data fetched:", accountData)
+
+        let idNumberFromDirectory: string | null = null
+        if (accountData.directory_id) {
+          console.log(`[ProfilePage] Fetching ID number from directory for directory_id: ${accountData.directory_id}`)
+          const { data: dirData, error: dirError } = await supabase
+            .from("directory")
+            .select("id")
+            .eq("id", accountData.directory_id)
+            .single()
+          if (dirError) {
+            console.error("[ProfilePage] Error fetching ID number from directory:", dirError)
+            toast.message("Warning", { description: "Could not fetch ID number from directory." })
+          } else if (dirData) {
+            idNumberFromDirectory = dirData.id?.toString() || null
+            console.log("[ProfilePage] ID number from directory:", idNumberFromDirectory)
+          }
         }
 
-        // Set profile with user data and email from session
-        setProfile({
-          ...userData,
+        const userProfileData: UserProfile = {
+          account_id: accountData.account_id,
+          auth_user_id: accountData.auth_user_id!,
+          name: accountData.name,
+          role: accountData.role,
+          committee: accountData.committee,
+          section: accountData.section,
+          user_type: accountData.user_type,
+          is_execboard: accountData.is_execboard,
+          is_sechead: accountData.is_sechead,
           email: session.user.email || "",
-        })
+          birthday: accountData.birthday,
+          id_number: idNumberFromDirectory,
+          degree_program: accountData.degree_program,
+          contact_number: accountData.contact_number,
+          profile_image_url: accountData.profile_image_url,
+        }
+        setProfile(userProfileData)
+        console.log("[ProfilePage] Profile state set:", userProfileData)
 
-        // Initialize edited profile
         setEditedProfile({
-          birthday: userData.birthday || "",
-          id_number: userData.id_number || "",
-          degree_program: userData.degree_program || "",
-          contact_number: userData.contact_number || "",
+          name: accountData.name || "",
+          committee: accountData.committee || "",
+          section: accountData.section || "",
+          birthday: accountData.birthday || "",
+          degree_program: accountData.degree_program || "",
+          contact_number: accountData.contact_number || "",
         })
       } catch (error) {
-        console.error("Error fetching profile:", error)
-        toast.error("Failed to load profile")
+        console.error("Error fetching profile in outer catch:", error)
+        toast.error("Failed to load profile data.")
       } finally {
         setLoading(false)
+        console.log("[ProfilePage] fetchProfile finished.")
       }
     }
 
     fetchProfile()
-  }, [])
-
-  // Helper function to format role/committee/section for display
-  const formatValue = (value: string | null) => {
-    if (!value) return "N/A"
-
-    // Convert kebab-case or snake_case to Title Case
-    return value
-      .replace(/[-_]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  }
+  }, [supabase])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -121,66 +170,98 @@ export default function ProfilePage() {
     setIsEditing(false)
     setPreviewUrl(null)
     setSelectedFile(null)
-    setEditedProfile({
-      birthday: profile?.birthday || "",
-      id_number: profile?.id_number || "",
-      degree_program: profile?.degree_program || "",
-      contact_number: profile?.contact_number || "",
-    })
+    if (profile) {
+        setEditedProfile({
+            name: profile.name || "",
+            committee: profile.committee || "",
+            section: profile.section || "",
+            birthday: profile.birthday || "",
+            degree_program: profile.degree_program || "",
+            contact_number: profile.contact_number || "",
+        });
+    } else {
+        setEditedProfile({});
+    }
   }
 
   const handleSaveProfile = async () => {
     if (!profile) return
 
     setIsSaving(true)
+    console.log("[ProfilePage] Saving profile. Initial edited data:", editedProfile)
 
     try {
-      // Upload profile image if selected
-      let profileImageUrl = profile.profile_image_url
+      let newProfileImageUrl = profile.profile_image_url
 
       if (selectedFile) {
+        console.log("[ProfilePage] Selected file present. Uploading new profile image...")
         const fileExt = selectedFile.name.split(".").pop()
-        const fileName = `${profile.id}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const fileName = `${profile.auth_user_id}-${Date.now()}.${fileExt}`
         const filePath = `profile-images/${fileName}`
+        console.log("[ProfilePage] Uploading to path:", filePath)
 
-        const { error: uploadError, data } = await supabase.storage.from("profiles").upload(filePath, selectedFile)
+        const { error: uploadError, data: uploadData } = await supabase.storage.from("profiles").upload(filePath, selectedFile)
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error("[ProfilePage] Profile image upload error:", uploadError)
+          throw uploadError
+        }
+        console.log("[ProfilePage] Profile image uploaded:", uploadData)
 
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("profiles").getPublicUrl(filePath)
-
-        profileImageUrl = publicUrl
+        const { data: urlData } = supabase.storage.from("profiles").getPublicUrl(filePath)
+        newProfileImageUrl = urlData.publicUrl
+        console.log("[ProfilePage] New profile image public URL:", newProfileImageUrl)
       }
 
-      // Update profile in database
-      const { error } = await supabase
-        .from("Users")
-        .update({
-          ...editedProfile,
-          profile_image_url: profileImageUrl,
-        })
-        .eq("id", profile.id)
-
-      if (error) throw error
-
-      // Update local state
-      setProfile({
-        ...profile,
+      const updatesForAccounts: Partial<UserProfile> & { profile_image_url?: string | null } = {
         ...editedProfile,
-        profile_image_url: profileImageUrl,
-      })
+      }
+      if (newProfileImageUrl !== profile.profile_image_url) {
+        updatesForAccounts.profile_image_url = newProfileImageUrl
+      }
+      console.log("[ProfilePage] Data to update in 'accounts':", updatesForAccounts)
+
+      const { error: updateError } = await supabase
+        .from("accounts")
+        .update(updatesForAccounts)
+        .eq("account_id", profile.account_id)
+
+      if (updateError) {
+        console.error("[ProfilePage] Error updating account in DB:", updateError)
+        throw updateError
+      }
+      console.log("[ProfilePage] Account successfully updated in DB.")
+
+      setProfile(prevProfile => ({
+        ...prevProfile!,
+        ...updatesForAccounts,
+      }))
 
       setIsEditing(false)
+      setPreviewUrl(null)
+      setSelectedFile(null)
       toast.success("Profile updated successfully")
     } catch (error) {
-      console.error("Error updating profile:", error)
-      toast.error("Failed to update profile")
+      console.error("Error saving profile in handleSaveProfile:", error)
+      toast.error(`Failed to update profile: ${(error as Error).message}`)
     } finally {
       setIsSaving(false)
+      console.log("[ProfilePage] handleSaveProfile finished.")
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditedProfile(prev => ({ ...prev, [name]: value || null }));
+  };
+
+  const formatValue = (value: string | null | undefined) => {
+    if (!value) return "N/A"
+    return value
+      .replace(/[-_]/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
   }
 
   return (
@@ -190,8 +271,7 @@ export default function ProfilePage() {
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
-            {/* Dashboard Navigation */}
-            <DashboardNav isAdmin={profile?.is_admin || false} />
+            <DashboardNav isAdmin={profile?.user_type === 'admin' || false} />
 
             <h1 className="text-2xl font-bold text-[#09331f] dark:text-white md:text-3xl mb-6">My Profile</h1>
 
@@ -201,7 +281,6 @@ export default function ProfilePage() {
               </div>
             ) : profile ? (
               <div className="grid gap-6">
-                {/* Profile Card */}
                 <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader className="bg-gray-100 dark:bg-gray-700 rounded-t-lg pb-3 flex flex-row justify-between items-center">
                     <CardTitle className="text-xl font-bold text-[#09331f] dark:text-white">
@@ -245,178 +324,109 @@ export default function ProfilePage() {
                       <div className="relative">
                         <Avatar className="h-24 w-24 border-2 border-[#09331f]/20 dark:border-gray-600">
                           {isEditing && previewUrl ? (
-                            <AvatarImage src={previewUrl || "/placeholder.svg"} alt={profile.name} />
+                            <AvatarImage src={previewUrl || undefined} alt={profile.name || "User avatar"} />
                           ) : (
-                            <AvatarImage src={profile.profile_image_url || ""} alt={profile.name} />
+                            <AvatarImage src={profile.profile_image_url || undefined} alt={profile.name || "User avatar"} />
                           )}
-                          <AvatarFallback className="text-2xl bg-[#09331f] text-white dark:bg-gray-700">
-                            {profile.name.charAt(0)}
-                          </AvatarFallback>
+                          <AvatarFallback>{profile.name ? profile.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                         </Avatar>
                         {isEditing && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="absolute bottom-0 right-0 rounded-full h-8 w-8 p-0 bg-white dark:bg-gray-700"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleFileChange}
-                            />
-                          </>
+                          <label htmlFor="profile-image-upload" className="absolute bottom-0 right-0 bg-[#09331f] text-white rounded-full p-1.5 cursor-pointer hover:bg-[#0a4429]">
+                            <Pencil className="h-3 w-3" />
+                            <input id="profile-image-upload" type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                          </label>
                         )}
                       </div>
-
-                      <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 flex-1">
                         <div>
-                          <h2 className="text-2xl font-bold dark:text-white">{profile.name}</h2>
-                          <p className="text-gray-500 dark:text-gray-400">{profile.email}</p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="bg-[#09331f]">{profile.is_admin ? "Admin" : "Member"}</Badge>
-                          {profile.is_performing && <Badge className="bg-blue-500">Performing</Badge>}
-                          {profile.is_executive_board && <Badge className="bg-purple-500">Executive Board</Badge>}
-                          {profile.admin_role && (
-                            <Badge className="bg-amber-500">{formatValue(profile.admin_role)}</Badge>
+                          <Label htmlFor="name" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Full Name</Label>
+                          {isEditing ? (
+                            <Input type="text" id="name" name="name" value={editedProfile.name || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.name || "N/A"}</p>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Details Card */}
-                <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700">
-                  <CardHeader className="bg-gray-100 dark:bg-gray-700 rounded-t-lg pb-3">
-                    <CardTitle className="text-xl font-bold text-[#09331f] dark:text-white">Member Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Role</h3>
-                        <p className="text-lg font-medium dark:text-white">{formatValue(profile.role)}</p>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Committee</h3>
-                        <p className="text-lg font-medium dark:text-white">{formatValue(profile.committee)}</p>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Voice Section</h3>
-                        <p className="text-lg font-medium dark:text-white">{formatValue(profile.section)}</p>
-                      </div>
-
-                      {profile.is_admin && profile.admin_role && (
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Admin Role</h3>
-                          <p className="text-lg font-medium dark:text-white">{formatValue(profile.admin_role)}</p>
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Email</Label>
+                          <p className="text-base text-gray-800 dark:text-white">{profile.email}</p>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Additional Information Card */}
-                <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700">
-                  <CardHeader className="bg-gray-100 dark:bg-gray-700 rounded-t-lg pb-3">
-                    <CardTitle className="text-xl font-bold text-[#09331f] dark:text-white">
-                      Additional Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="birthday" className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Birthday
-                        </Label>
-                        {isEditing ? (
-                          <Input
-                            id="birthday"
-                            type="date"
-                            value={editedProfile.birthday || ""}
-                            onChange={(e) => setEditedProfile({ ...editedProfile, birthday: e.target.value })}
-                            className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                          />
-                        ) : (
-                          <p className="text-lg font-medium dark:text-white">{profile.birthday || "Not set"}</p>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">ID Number</Label>
+                          <p className="text-base text-gray-800 dark:text-white">{profile.id_number || "N/A"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">User Type</Label>
+                          <Badge variant={profile.user_type === "admin" ? "destructive" : "secondary"} className="capitalize">
+                            {formatValue(profile.user_type)}
+                          </Badge>
+                        </div>
+                        {profile.user_type === "admin" && profile.role && (
+                          <div>
+                            <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Admin Role</Label>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.role)}</p>
+                          </div>
                         )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="id_number" className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          ID Number
-                        </Label>
-                        {isEditing ? (
-                          <Input
-                            id="id_number"
-                            type="text"
-                            value={editedProfile.id_number || ""}
-                            onChange={(e) => setEditedProfile({ ...editedProfile, id_number: e.target.value })}
-                            className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                          />
-                        ) : (
-                          <p className="text-lg font-medium dark:text-white">{profile.id_number || "Not set"}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label
-                          htmlFor="degree_program"
-                          className="text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          Degree Program
-                        </Label>
-                        {isEditing ? (
-                          <Input
-                            id="degree_program"
-                            type="text"
-                            value={editedProfile.degree_program || ""}
-                            onChange={(e) => setEditedProfile({ ...editedProfile, degree_program: e.target.value })}
-                            className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                          />
-                        ) : (
-                          <p className="text-lg font-medium dark:text-white">{profile.degree_program || "Not set"}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label
-                          htmlFor="contact_number"
-                          className="text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          Contact Number
-                        </Label>
-                        {isEditing ? (
-                          <Input
-                            id="contact_number"
-                            type="tel"
-                            value={editedProfile.contact_number || ""}
-                            onChange={(e) => setEditedProfile({ ...editedProfile, contact_number: e.target.value })}
-                            className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                          />
-                        ) : (
-                          <p className="text-lg font-medium dark:text-white">{profile.contact_number || "Not set"}</p>
-                        )}
+                        <div>
+                          <Label htmlFor="section" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Section/Voice</Label>
+                          {isEditing ? (
+                            <Input type="text" id="section" name="section" value={editedProfile.section || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.section)}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="committee" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Committee</Label>
+                          {isEditing ? (
+                            <Input type="text" id="committee" name="committee" value={editedProfile.committee || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.committee)}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Executive Board</Label>
+                          <Badge variant={profile.is_execboard ? "default" : "outline"} className="capitalize">
+                            {profile.is_execboard ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Section Head</Label>
+                          <Badge variant={profile.is_sechead ? "default" : "outline"} className="capitalize">
+                            {profile.is_sechead ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label htmlFor="birthday" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Birthday</Label>
+                          {isEditing ? (
+                            <Input type="date" id="birthday" name="birthday" value={editedProfile.birthday || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.birthday ? format(new Date(profile.birthday), "MMMM d, yyyy") : "N/A"}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="degree_program" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Degree Program</Label>
+                          {isEditing ? (
+                            <Input type="text" id="degree_program" name="degree_program" value={editedProfile.degree_program || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.degree_program || "N/A"}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="contact_number" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Contact Number</Label>
+                          {isEditing ? (
+                            <Input type="tel" id="contact_number" name="contact_number" value={editedProfile.contact_number || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.contact_number || "N/A"}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             ) : (
-              <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700">
-                <CardContent className="p-6 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">Profile not found. Please try logging in again.</p>
-                </CardContent>
-              </Card>
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-300">No profile data found. Please complete your account setup or contact an administrator.</p>
+              </div>
             )}
           </div>
         </main>

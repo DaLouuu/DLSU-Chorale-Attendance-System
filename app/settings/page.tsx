@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

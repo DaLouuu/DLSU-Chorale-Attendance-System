@@ -6,7 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Calendar, ClipboardCheck, Home, User, Settings, LogOut, Menu } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -22,6 +22,7 @@ interface NavItem {
 export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
+  const supabase = createClient()
   const [open, setOpen] = useState(false)
 
   const navItems: NavItem[] = [

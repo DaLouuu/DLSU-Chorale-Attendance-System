@@ -41,11 +41,12 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copy only built assets and prod deps
 COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 
 # Set proper permissions
-RUN chown -R nextjs:nodejs /app
+RUN chown -R nextjs:nodejs /app/.next /app/public /app/node_modules /app/package.json
 
 # Switch to non-root user
 USER nextjs

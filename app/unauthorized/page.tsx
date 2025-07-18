@@ -6,19 +6,19 @@ import { AlertTriangle, ArrowLeft } from "lucide-react"
 
 export default function UnauthorizedPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <GalleryBackground />
       <div className="flex min-h-screen flex-col relative z-10">
         {/* Header with DLSU Chorale branding */}
-        <header className="bg-[#09331f] py-8 shadow-md">
+        <header className="bg-primary py-8 shadow-md">
           <div className="container mx-auto px-4 flex items-center">
-            <Button variant="ghost" size="sm" asChild className="mr-4 text-white hover:bg-[#09331f]/50">
+            <Button variant="ghost" size="sm" asChild className="mr-4 text-primary-foreground hover:bg-primary/50">
               <Link href="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Link>
             </Button>
-            <h1 className="text-2xl font-bold text-white">DLSU Chorale</h1>
+            <h1 className="text-2xl font-bold text-primary-foreground">DLSU Chorale</h1>
           </div>
         </header>
 
@@ -52,8 +52,8 @@ export default function UnauthorizedPage() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-[#1B1B1B] py-6 shadow-inner">
-          <div className="container mx-auto px-4 text-center text-white text-sm">
+        <footer className="bg-background border-t border-border py-6 shadow-inner mt-auto">
+          <div className="container mx-auto px-4 text-center text-foreground text-sm">
             &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
           </div>
         </footer>

@@ -11,13 +11,17 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
+import { useTheme } from "@/components/theme-provider"
 
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
   const [emailNotifications, setEmailNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { theme, setTheme } = useTheme()
+
+  // Helper to determine if dark mode is active
+  const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   const handleSaveSettings = () => {
     toast.success("Settings saved successfully")
@@ -45,7 +49,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
@@ -54,13 +58,13 @@ export default function SettingsPage() {
             {/* Dashboard Navigation */}
             <DashboardNav />
 
-            <h1 className="text-2xl font-bold text-[#09331f] md:text-3xl mb-6">Settings</h1>
+            <h1 className="text-2xl font-bold text-primary md:text-3xl mb-6">Settings</h1>
 
             <div className="grid gap-6">
               {/* Notification Settings */}
               <Card className="shadow-md">
-                <CardHeader className="bg-gray-100 rounded-t-lg pb-3">
-                  <CardTitle className="text-xl font-bold text-[#09331f]">Notification Settings</CardTitle>
+                <CardHeader className="bg-muted rounded-t-lg pb-3">
+                  <CardTitle className="text-xl font-bold text-primary">Notification Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-4">
@@ -69,7 +73,7 @@ export default function SettingsPage() {
                         <Label htmlFor="email-notifications" className="text-base font-medium">
                           Email Notifications
                         </Label>
-                        <p className="text-sm text-gray-500">Receive email notifications for attendance updates</p>
+                        <p className="text-sm text-muted-foreground">Receive email notifications for attendance updates</p>
                       </div>
                       <Switch
                         id="email-notifications"
@@ -83,13 +87,17 @@ export default function SettingsPage() {
                         <Label htmlFor="dark-mode" className="text-base font-medium">
                           Dark Mode
                         </Label>
-                        <p className="text-sm text-gray-500">Switch between light and dark theme</p>
+                        <p className="text-sm text-muted-foreground">Switch between light and dark theme</p>
                       </div>
-                      <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
+                      <Switch
+                        id="dark-mode"
+                        checked={isDark}
+                        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                      />
                     </div>
                   </div>
 
-                  <Button onClick={handleSaveSettings} className="mt-6 bg-[#09331f] hover:bg-[#09331f]/90">
+                  <Button onClick={handleSaveSettings} className="mt-6">
                     Save Settings
                   </Button>
                 </CardContent>
@@ -97,8 +105,8 @@ export default function SettingsPage() {
 
               {/* Account Settings */}
               <Card className="shadow-md">
-                <CardHeader className="bg-gray-100 rounded-t-lg pb-3">
-                  <CardTitle className="text-xl font-bold text-[#09331f]">Account Settings</CardTitle>
+                <CardHeader className="bg-muted rounded-t-lg pb-3">
+                  <CardTitle className="text-xl font-bold text-primary">Account Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-4">

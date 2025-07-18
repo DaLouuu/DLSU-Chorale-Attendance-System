@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   let response = await updateSession(request)
   console.log("[Middleware] updateSession completed.")
 
-  const supabase = createClient()
+  const supabase = await createClient();
   console.log("[Middleware] Supabase client created.")
 
   const { data: { session }, error: sessionAuthError } = await supabase.auth.getSession()

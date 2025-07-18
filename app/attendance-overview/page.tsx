@@ -44,7 +44,7 @@ export default function AttendanceOverviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
@@ -55,21 +55,21 @@ export default function AttendanceOverviewPage() {
 
             {/* Page title and action button */}
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-[#09331f] md:text-3xl">My Attendance</h1>
-              <Button asChild className="bg-[#09331f] hover:bg-[#09331f]/90">
+              <h1 className="text-2xl font-bold text-primary md:text-3xl">My Attendance</h1>
+              <Button asChild className="bg-primary hover:bg-primary/90">
                 <Link href="/attendance-form">Submit Excuse</Link>
               </Button>
             </div>
 
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4">
-              <Button variant="ghost" onClick={() => navigateMonth(-1)} className="text-[#09331f]">
+              <Button variant="ghost" onClick={() => navigateMonth(-1)} className="text-primary">
                 &larr; Previous Month
               </Button>
 
               <h2 className="text-xl font-semibold">{format(currentMonth, "MMMM yyyy")}</h2>
 
-              <Button variant="ghost" onClick={() => navigateMonth(1)} className="text-[#09331f]">
+              <Button variant="ghost" onClick={() => navigateMonth(1)} className="text-primary">
                 Next Month &rarr;
               </Button>
             </div>

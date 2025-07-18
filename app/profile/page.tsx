@@ -265,7 +265,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
@@ -273,7 +273,7 @@ export default function ProfilePage() {
           <div className="mx-auto max-w-4xl">
             <DashboardNav isAdmin={profile?.user_type === 'admin' || false} />
 
-            <h1 className="text-2xl font-bold text-[#09331f] dark:text-white md:text-3xl mb-6">My Profile</h1>
+            <h1 className="text-2xl font-bold text-primary md:text-3xl mb-6">My Profile</h1>
 
             {loading ? (
               <div className="flex justify-center py-12">

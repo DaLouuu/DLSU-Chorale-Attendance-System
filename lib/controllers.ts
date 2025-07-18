@@ -3,16 +3,16 @@ import type { Database, Status, AttendanceLogMethod } from "@/types/database.typ
 
 // ACCOUNTS (formerly USERS)
 export async function getAccountByAuthUserId(authUserId: string) {
-  const supabase = createClient()
-  return supabase.from("accounts").select("*").eq("auth_user_id", authUserId).single()
+  const supabase = await createClient();
+  return supabase.from("accounts").select("*").eq("auth_user_id", authUserId).single();
 }
 export async function getAccountById(id: number) {
   const supabase = createClient()
   return supabase.from("accounts").select("*").eq("account_id", id).single()
 }
 export async function createAccount(account: Database["public"]["Tables"]["accounts"]["Insert"]) {
-  const supabase = createClient()
-  return supabase.from("accounts").insert([account])
+  const supabase = await createClient();
+  return supabase.from("accounts").insert([account]);
 }
 export async function updateAccount(id: number, updates: Partial<Database["public"]["Tables"]["accounts"]["Update"]>) {
   const supabase = createClient()
@@ -31,8 +31,8 @@ export async function getAttendanceLogsByUser(userID: number) {
 export async function createAttendanceLog(
   log: Database["public"]["Tables"]["attendancelogs"]["Insert"],
 ) {
-  const supabase = createClient()
-  return supabase.from("attendancelogs").insert([log])
+  const supabase = await createClient();
+  return supabase.from("attendancelogs").insert([log]);
 }
 export async function updateAttendanceLog(
   userID: number,
@@ -55,8 +55,8 @@ export async function getExcuseRequestsByUser(userID: number) {
 export async function createExcuseRequest(
   request: Database["public"]["Tables"]["excuserequests"]["Insert"],
 ) {
-  const supabase = createClient()
-  return supabase.from("excuserequests").insert([request])
+  const supabase = await createClient();
+  return supabase.from("excuserequests").insert([request]);
 }
 export async function updateExcuseRequest(
   userID: number,
@@ -74,12 +74,12 @@ export async function deleteExcuseRequest(userID: number, date: string, type: st
 
 // DIRECTORY
 export async function getDirectoryEntryByEmail(email: string) {
-  const supabase = createClient()
-  return supabase.from("directory").select("*").eq("email", email).single()
+  const supabase = await createClient();
+  return supabase.from("directory").select("*").eq("email", email).single();
 }
 export async function createDirectoryEntry(entry: Database["public"]["Tables"]["directory"]["Insert"]) {
-  const supabase = createClient()
-  return supabase.from("directory").insert([entry])
+  const supabase = await createClient();
+  return supabase.from("directory").insert([entry]);
 }
 export async function updateDirectoryEntry(
   id: number,

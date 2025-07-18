@@ -4,16 +4,16 @@ import { PageFooter } from "@/components/layout/page-footer"
 
 export default function AttendancePage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <PageHeader />
 
       <main className="flex-1 container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Attendance</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Attendance</h1>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <p className="text-gray-600 mb-4">This is the attendance page. Content will be added soon.</p>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6 mb-6">
+          <p className="text-muted-foreground mb-4">This is the attendance page. Content will be added soon.</p>
 
-          <Link href="/" className="text-[#09331f] font-medium hover:underline">
+          <Link href="/" className="text-primary font-medium hover:underline">
             Return to Dashboard
           </Link>
         </div>

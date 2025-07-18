@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   let redirectTo = "/auth/setup" // Default redirect, will be changed if errors or other conditions met
 
   if (code) {
-    const supabase = createClient()
+    const supabase = await createClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {

@@ -2,7 +2,7 @@ export function BackgroundPattern() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       {/* Main gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white to-[#f8f8f8]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white to-[#f8f8f8] dark:from-gray-900 dark:to-gray-950" />
 
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full opacity-[0.03]">

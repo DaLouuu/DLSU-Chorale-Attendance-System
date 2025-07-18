@@ -120,7 +120,7 @@ export default function AttendanceOverviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
         <PageHeader />
 
@@ -131,9 +131,9 @@ export default function AttendanceOverviewPage() {
 
             {/* Page title */}
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-[#09331f] md:text-3xl">View Attendance Excuses</h1>
+              <h1 className="text-2xl font-bold text-primary md:text-3xl">View Attendance Excuses</h1>
 
-              <Button asChild className="bg-[#09331f] hover:bg-[#09331f]/90">
+              <Button asChild className="bg-primary hover:bg-primary/90">
                 <Link href="/admin/excuse-approval">
                   <ClipboardCheck className="mr-2 h-4 w-4" />
                   Excuse Approval

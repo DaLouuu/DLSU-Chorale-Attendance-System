@@ -22,9 +22,9 @@ export function ExcuseList({ excuses, onApprove, onDecline }: ExcuseListProps) {
   }
 
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-border">
       {excuses.map((excuse) => (
-        <div key={excuse.id} className="p-4">
+        <div key={excuse.id} className="p-4 bg-card rounded-md mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
@@ -32,8 +32,8 @@ export function ExcuseList({ excuses, onApprove, onDecline }: ExcuseListProps) {
                 <AvatarFallback>{excuse.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-medium text-gray-900">{excuse.name}</h3>
-                <div className="text-sm text-gray-500 capitalize">
+                <h3 className="font-medium text-foreground">{excuse.name}</h3>
+                <div className="text-sm text-muted-foreground capitalize">
                   {excuse.voiceSection} {excuse.voiceNumber}
                 </div>
               </div>
@@ -41,15 +41,15 @@ export function ExcuseList({ excuses, onApprove, onDecline }: ExcuseListProps) {
             <Badge
               className={`${
                 excuse.type === "ABSENT"
-                  ? "bg-red-100 text-red-800 hover:bg-red-100"
-                  : "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                  ? "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900 dark:text-red-200"
+                  : "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-200"
               }`}
             >
               {excuse.type}
             </Badge>
           </div>
 
-          <div className="mt-3 rounded-md bg-gray-50 p-3">
+          <div className="mt-3 rounded-md bg-muted p-3">
             <div className="mb-2 text-sm">
               <span className="font-medium">Date:</span> {excuse.date}
             </div>

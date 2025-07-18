@@ -76,8 +76,8 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
   return (
     <>
       {/* Mobile Navigation */}
-      <div className="md:hidden bg-white dark:bg-gray-900 shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-[#09331f] dark:text-white">Dashboard</h2>
+      <div className="md:hidden bg-background shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-primary">Dashboard</h2>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -85,7 +85,7 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[250px] sm:w-[300px] dark:bg-gray-800">
+          <SheetContent side="right" className="w-[250px] sm:w-[300px] bg-muted">
             <nav className="flex flex-col gap-4 mt-8">
               {filteredItems.map((item) => (
                 <Link
@@ -94,8 +94,8 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-2 p-2 rounded-md ${
                     pathname === item.href
-                      ? "bg-[#09331f] text-white dark:bg-[#09331f]"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
                   }`}
                 >
                   {item.icon}
@@ -104,7 +104,7 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
               ))}
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 p-2 rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="flex items-center gap-2 p-2 rounded-md text-red-600 hover:bg-destructive/10"
               >
                 <LogOut className="h-5 w-5" />
                 <span>Sign Out</span>
@@ -123,7 +123,7 @@ export function DashboardNav({ isAdmin = false }: { isAdmin?: boolean }) {
               variant={pathname === item.href ? "default" : "outline"}
               size="sm"
               asChild
-              className={pathname === item.href ? "bg-[#09331f] text-white" : "dark:text-white dark:border-gray-700"}
+              className={pathname === item.href ? "bg-primary text-primary-foreground" : "text-foreground border-border"}
             >
               <Link href={item.href} className="flex items-center gap-2">
                 {item.icon}

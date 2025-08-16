@@ -8,12 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { createClient } from "@/utils/supabase/client"
-import { signInWithSchoolIdPassword } from "@/lib/auth-actions"
+import { createClient } from "@/utils/supabase/client" // Import the browser client
+import { signInWithSchoolIdPassword } from "@/lib/auth-actions" // Import the server action
 
 export function LoginForm() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = createClient() // Instantiate the browser client
 
   const [schoolId, setSchoolId] = useState("")
   const [password, setPassword] = useState("")
@@ -33,11 +33,23 @@ export function LoginForm() {
 
       const result = await signInWithSchoolIdPassword(formData)
 
-      if (result?.error) {
+      if (result?.error) { // Server action will redirect on success, so only handle error here
         toast.error(result.error.message || "Failed to login. Please try again.")
         console.error("Login error from server action:", result.error)
       }
+      // No toast.success here, as successful login redirects from server action.
+      // router.refresh() or router.push() are also not strictly needed here due to server-side redirect.
+
     } catch (error: any) {
+      // Check if this is a Next.js redirect (which is not an actual error)
+      if (error?.digest?.includes('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+        // This is a successful redirect, not an error - do nothing
+        console.log("Login successful, redirecting...")
+        return
+      }
+      
+      // This catch block is for unexpected errors during the client-side part 
+      // or if the server action itself throws an unhandled exception (not a returned error object).
       console.error("Unexpected login error:", error)
       toast.error("An unexpected error occurred during login.")
     } finally {
@@ -56,7 +68,7 @@ export function LoginForm() {
       <form onSubmit={handleSchoolIdPasswordLogin}>
         <CardContent className="space-y-5">
           <div className="space-y-3">
-            <Label htmlFor="schoolId" className="text-sm font-medium text-[#1B1B1B] dark:text-white">School ID</Label>
+            <Label htmlFor="schoolId" className="text-sm font-medium text-[#09331f] dark:text-white">School ID</Label>
             <Input
               id="schoolId"
               name="schoolId"
@@ -71,9 +83,9 @@ export function LoginForm() {
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-sm font-medium text-[#1B1B1B] dark:text-white">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-[#09331f] dark:text-white">Password</Label>
               <Link
-                href="/forgot-password"
+                href="/forgot-password" // Placeholder for forgot password page
                 className="text-xs text-[#09331f] hover:underline dark:text-green-400"
               >
                 Forgot your password?
@@ -88,7 +100,7 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               required
-              className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:text-white"
+              className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <Button type="submit" className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white" disabled={isLoading}>

@@ -40,30 +40,30 @@ export async function middleware(request: NextRequest) {
   // then we need to check account status for protected routes.
   if (session && !isPublicRoute && !isAuthRoute) {
     console.log(`[Middleware] Session exists, not public, not auth. Checking account for path: ${request.nextUrl.pathname}`)
-    console.log(`[Middleware] Querying 'accounts' for auth_user_id: ${session.user.id}`)
-    const { data: accountData, error: accountError } = await supabase
-      .from("accounts")
-      .select("user_type, account_id")
-      .eq("auth_user_id", session.user.id)
+    console.log(`[Middleware] Querying 'profiles' for id: ${session.user.id}`)
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, id")
+      .eq("id", session.user.id)
       .single()
 
-    console.log("[Middleware] Account query result - data:", accountData, "error:", accountError)
+    console.log("[Middleware] Profile query result - data:", profileData, "error:", profileError)
 
-    if (accountError && accountError.code !== 'PGRST116') {
-      console.error("[Middleware] Database error fetching account (and not PGRST116):", accountError)
-    } else if (!accountData && request.nextUrl.pathname !== "/auth/setup") {
-      // NO accountData (could be PGRST116 or genuinely null after no error)
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("[Middleware] Database error fetching profile (and not PGRST116):", profileError)
+    } else if (!profileData && request.nextUrl.pathname !== "/auth/setup") {
+      // NO profileData (could be PGRST116 or genuinely null after no error)
       // AND we are NOT already trying to go to /auth/setup
-      console.warn("[Middleware] No account data found for user, and not on /auth/setup. Redirecting to /auth/setup.")
-      return NextResponse.redirect(new URL("/auth/setup?from=middleware_no_account", request.url))
-    } else if (accountData) {
-      console.log("[Middleware] Account data found:", accountData)
+      console.warn("[Middleware] No profile data found for user, and not on /auth/setup. Redirecting to /auth/setup.")
+      return NextResponse.redirect(new URL("/auth/setup?from=middleware_no_profile", request.url))
+    } else if (profileData) {
+      console.log("[Middleware] Profile data found:", profileData)
       const path = request.nextUrl.pathname
-      if (path.startsWith("/admin") && accountData.user_type !== "admin") {
+      if (path.startsWith("/admin") && profileData.role !== "Executive Board") {
         console.warn("[Middleware] Non-admin attempting to access admin route. Redirecting to / (dashboard or attendance-form).")
         return NextResponse.redirect(new URL("/attendance-form", request.url)) 
       }
-      console.log("[Middleware] Account check passed. User type:", accountData.user_type)
+      console.log("[Middleware] Profile check passed. User role:", profileData.role)
     }
   }
 

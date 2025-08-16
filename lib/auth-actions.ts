@@ -36,44 +36,61 @@ export async function signInWithEmailPassword(formData: FormData) {
 export async function signInWithSchoolIdPassword(formData: FormData) {
   const schoolId = formData.get('schoolId') as string;
   const password = formData.get('password') as string;
-  const supabase = await createClient();
-
+  
   // Basic validation
   if (!schoolId || !password) {
     return { error: { message: "School ID and password are required.", code: "validation_error" } };
   }
 
   try {
-    // First, fetch the profile to get the email associated with the school ID
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email, auth_user_id')
-      .eq('school_id', schoolId)
+    const supabase = await createClient();
+
+    // Look up email from the directory table using school_id
+    const { data: directoryEntry, error: directoryError } = await supabase
+      .from('directory')
+      .select('email')
+      .eq('school_id', parseInt(schoolId))
       .single();
 
-    if (profileError || !profile) {
-      return { error: { message: "School ID not found. Please check your ID or contact support.", code: "profile_not_found" } };
+    if (directoryError) {
+      // Check if it's an RLS policy issue
+      if (directoryError.message.includes('policy') || directoryError.message.includes('permission')) {
+        return { error: { message: "Access denied. This might be due to database permissions. Please contact support.", code: "rls_policy_error" } };
+      }
+      
+      if (directoryError.code === 'PGRST116') {
+        return { error: { message: "School ID not found. Please check your ID or contact support.", code: "school_id_not_found" } };
+      }
+      
+      return { error: { message: `Directory lookup error: ${directoryError.message}`, code: "directory_error" } };
     }
 
-    if (!profile.email) {
+    if (!directoryEntry || !directoryEntry.email) {
       return { error: { message: "No email associated with this school ID. Please contact support.", code: "no_email" } };
     }
 
     // Now authenticate using the email and password
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email: profile.email,
+      email: directoryEntry.email,
       password,
     });
 
     if (authError) {
-      console.error("Sign in error:", authError);
+      console.error("Authentication error:", authError);
       return { error: { message: authError.message || "Invalid password. Please try again.", code: authError.code } };
     }
 
     // On successful sign-in, redirect to dashboard
+    // Note: redirect() throws a special error that Next.js catches internally
     redirect('/dashboard');
-  } catch (error) {
+  } catch (error: any) {
+    // Check if this is a Next.js redirect (which is not an actual error)
+    if (error?.digest?.includes('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+      // This is a successful redirect, not an error
+      throw error; // Re-throw to let Next.js handle the redirect
+    }
+    
     console.error("Unexpected error during school ID authentication:", error);
-    return { error: { message: "An unexpected error occurred. Please try again.", code: "unknown_error" } };
+    return { error: { message: `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`, code: "unknown_error" } };
   }
 } 

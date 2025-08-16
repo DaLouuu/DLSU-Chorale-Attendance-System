@@ -9,6 +9,7 @@ interface GalleryBackgroundProps {
 
 export function GalleryBackground({ className }: GalleryBackgroundProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
 
   const images = [
     "/images/choir-bcfc.png",
@@ -20,6 +21,9 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
   ]
 
   useEffect(() => {
+    console.log("GalleryBackground mounted, images:", images)
+    setImagesLoaded(true)
+    
     // Change active image every 6 seconds
     const interval = setInterval(() => {
       setActiveImageIndex((prev) => (prev + 1) % images.length)
@@ -30,10 +34,19 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
     }
   }, [images.length])
 
+  useEffect(() => {
+    console.log("Active image index:", activeImageIndex, "Image:", images[activeImageIndex])
+  }, [activeImageIndex, images])
+
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
+    <div className="fixed inset-0 z-0 overflow-hidden bg-red-500">
+      {/* Debug info - remove this later */}
+      <div className="absolute top-0 left-0 z-50 bg-white text-black p-2 text-xs">
+        Debug: Active: {activeImageIndex}, Loaded: {imagesLoaded ? 'Yes' : 'No'}
+      </div>
+      
       {/* Dark overlay - reduced opacity to see photos better */}
-      <div className="absolute inset-0 bg-black/65 z-10" />
+      <div className="absolute inset-0 bg-black/40 z-10" />
 
       {/* Images */}
       {images.map((src, index) => (
@@ -44,20 +57,23 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
           }`}
         >
           <Image
-            src={src || "/placeholder.svg"}
+            src={src}
             alt={`DLSU Chorale performance ${index + 1}`}
             fill
             className="object-cover"
             priority={index === 0}
+            sizes="100vw"
+            onLoad={() => console.log(`Image ${index} loaded:`, src)}
+            onError={(e) => console.error(`Image ${index} failed to load:`, src, e)}
           />
         </div>
       ))}
 
       {/* Musical note decorations */}
-      <div className="absolute top-10 left-10 text-white/10 text-7xl z-20 transform -rotate-12">♪</div>
-      <div className="absolute bottom-20 right-10 text-white/10 text-8xl z-20 transform rotate-12">♫</div>
-      <div className="absolute top-1/3 right-20 text-white/10 text-6xl z-20 transform rotate-45">♩</div>
-      <div className="absolute bottom-1/3 left-20 text-white/10 text-9xl z-20 transform -rotate-6">♬</div>
+      <div className="absolute top-10 left-10 text-white/20 text-7xl z-20 transform -rotate-12">♪</div>
+      <div className="absolute bottom-20 right-10 text-white/20 text-8xl z-20 transform rotate-12">♫</div>
+      <div className="absolute top-1/3 right-20 text-white/20 text-6xl z-20 transform rotate-45">♩</div>
+      <div className="absolute bottom-1/3 left-20 text-white/20 text-9xl z-20 transform -rotate-6">♬</div>
 
       {/* Subtle black gradient overlay instead of green */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-20" />

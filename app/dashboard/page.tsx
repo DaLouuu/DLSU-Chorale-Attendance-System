@@ -20,7 +20,7 @@ import {
   Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
@@ -61,7 +61,7 @@ export default function DashboardPage() {
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("role")
-          .eq("auth_user_id", session.user.id)
+          .eq("id", session.user.id)
           .single()
 
         if (profileError) {
@@ -220,6 +220,11 @@ export default function DashboardPage() {
                     <X className="h-5 w-5" />
                   </Button>
                 </div>
+                
+                {/* Add DialogTitle for accessibility */}
+                <SheetTitle className="sr-only">
+                  Navigation Menu
+                </SheetTitle>
 
                 <nav className="flex-1 px-4">
                   <div className="space-y-1 mb-8">

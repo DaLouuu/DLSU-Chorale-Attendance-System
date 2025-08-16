@@ -6,162 +6,182 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Status = "Pending" | "Approved" | "Rejected" | "Excused" | "Unexcused"
-export type AttendanceLogMethod = "RFID" | "Manual" | "WebApp"
+export type ExcuseStatus = "Pending" | "Approved" | "Rejected"
+export type LogMethod = "RFID" | "Manual"
+export type LogStatus = "Late" | "On-time"
+export type Role = "Performing" | "Non-performing" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
+export type VoiceSection = "Soprano" | "Alto" | "Tenor" | "Bass"
+export type Committee = "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
+export type ExcuseType = "Absence" | "Late" | "Step Out" | "Leave Early"
 
 export interface Database {
   public: {
     Tables: {
-      accounts: {
+      profiles: {
         Row: {
-          account_id: string
-          auth_user_id: string
-          email: string
-          name: string
-          user_type: 'member' | 'admin'
+          id: string
+          auth_user_id: string | null
           created_at: string
-          updated_at: string
+          full_name: string | null
+          email: string | null
+          section: VoiceSection | null
+          committee: Committee | null
+          role: Role | null
+          user_type: string | null
+          is_execboard: boolean
+          is_admin: boolean
+          school_id: string | null
         }
         Insert: {
-          account_id?: string
-          auth_user_id: string
-          email: string
-          name: string
-          user_type: 'member' | 'admin'
+          id?: string
+          auth_user_id?: string | null
           created_at?: string
-          updated_at?: string
+          full_name?: string | null
+          email?: string | null
+          section?: VoiceSection | null
+          committee?: Committee | null
+          role?: Role | null
+          user_type?: string | null
+          is_execboard?: boolean
+          is_admin?: boolean
+          school_id?: string | null
         }
         Update: {
-          account_id?: string
-          auth_user_id?: string
-          email?: string
-          name?: string
-          user_type?: 'member' | 'admin'
+          id?: string
+          auth_user_id?: string | null
           created_at?: string
-          updated_at?: string
+          full_name?: string | null
+          email?: string | null
+          section?: VoiceSection | null
+          committee?: Committee | null
+          role?: Role | null
+          user_type?: string | null
+          is_execboard?: boolean
+          is_admin?: boolean
+          school_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "accounts_auth_user_id_fkey"
+            foreignKeyName: "profiles_auth_user_id_fkey"
             columns: ["auth_user_id"]
-            isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_logs: {
+        Row: {
+          log_id: number
+          created_at: string
+          profile_id_fk: string
+          log_method: LogMethod
+          log_status: LogStatus
+          reh_id_fk: number | null
+        }
+        Insert: {
+          log_id?: number
+          created_at?: string
+          profile_id_fk: string
+          log_method: LogMethod
+          log_status: LogStatus
+          reh_id_fk?: number | null
+        }
+        Update: {
+          log_id?: number
+          created_at?: string
+          profile_id_fk?: string
+          log_method?: LogMethod
+          log_status?: LogStatus
+          reh_id_fk?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_logs_profile_id_fk_fkey"
+            columns: ["profile_id_fk"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_logs_reh_id_fk_fkey"
+            columns: ["reh_id_fk"]
+            referencedRelation: "rehearsals"
+            referencedColumns: ["reh_id"]
+          }
+        ]
+      }
+      excuse_requests: {
+        Row: {
+          request_id: number
+          created_at: string
+          profile_id_fk: string
+          excuse_type: ExcuseType
+          excuse_reason: string | null
+          request_date: string
+          request_time: string | null
+          status: ExcuseStatus
+          admin_notes: string | null
+          admin_id_fk: string | null
+        }
+        Insert: {
+          request_id?: number
+          created_at?: string
+          profile_id_fk: string
+          excuse_type: ExcuseType
+          excuse_reason?: string | null
+          request_date: string
+          request_time?: string | null
+          status?: ExcuseStatus
+          admin_notes?: string | null
+          admin_id_fk?: string | null
+        }
+        Update: {
+          request_id?: number
+          created_at?: string
+          profile_id_fk?: string
+          excuse_type?: ExcuseType
+          excuse_reason?: string | null
+          request_date?: string
+          request_time?: string | null
+          status?: ExcuseStatus
+          admin_notes?: string | null
+          admin_id_fk?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excuse_requests_admin_id_fk_fkey"
+            columns: ["admin_id_fk"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excuse_requests_profile_id_fk_fkey"
+            columns: ["profile_id_fk"]
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           }
         ]
       }
-      attendancelogs: {
+      rehearsals: {
         Row: {
-          account_id_fk: string
-          attendance_log_method: Database["public"]["Enums"]["AttendanceLogMethod"]
-          log_id: string
-          synced: boolean | null
-          timestamp: string
-        }
-        Insert: {
-          account_id_fk: string
-          attendance_log_method?: Database["public"]["Enums"]["AttendanceLogMethod"]
-          log_id?: string
-          synced?: boolean | null
-          timestamp?: string
-        }
-        Update: {
-          account_id_fk?: string
-          attendance_log_method?: Database["public"]["Enums"]["AttendanceLogMethod"]
-          log_id?: string
-          synced?: boolean | null
-          timestamp?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendancelogs_account_id_fkey"
-            columns: ["account_id_fk"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["account_id"]
-          }
-        ]
-      }
-      excuses: {
-        Row: {
-          excuse_id: string
-          account_id_fk: string
-          event_id_fk: string
-          reason: string
-          status: Database["public"]["Enums"]["Status"]
-          submitted_at: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          decline_reason: string | null
-        }
-        Insert: {
-          excuse_id?: string
-          account_id_fk: string
-          event_id_fk: string
-          reason: string
-          status?: Database["public"]["Enums"]["Status"]
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          decline_reason?: string | null
-        }
-        Update: {
-          excuse_id?: string
-          account_id_fk?: string
-          event_id_fk?: string
-          reason?: string
-          status?: Database["public"]["Enums"]["Status"]
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          decline_reason?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "excuses_account_id_fk_fkey"
-            columns: ["account_id_fk"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["account_id"]
-          }
-        ]
-      }
-      events: {
-        Row: {
-          event_id: string
-          title: string
-          description: string | null
-          date: string
-          start_time: string | null
-          end_time: string | null
-          location: string | null
-          event_type: string
+          reh_id: number
           created_at: string
-          updated_at: string
+          reh_date: string
+          reh_time: string
+          reh_name: string | null
         }
         Insert: {
-          event_id?: string
-          title: string
-          description?: string | null
-          date: string
-          start_time?: string | null
-          end_time?: string | null
-          location?: string | null
-          event_type: string
+          reh_id?: number
           created_at?: string
-          updated_at?: string
+          reh_date: string
+          reh_time: string
+          reh_name?: string | null
         }
         Update: {
-          event_id?: string
-          title?: string
-          description?: string | null
-          date?: string
-          start_time?: string | null
-          end_time?: string | null
-          location?: string | null
-          event_type?: string
+          reh_id?: number
           created_at?: string
-          updated_at?: string
+          reh_date?: string
+          reh_time?: string
+          reh_name?: string | null
         }
         Relationships: []
       }
@@ -173,8 +193,13 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      Status: "Pending" | "Approved" | "Rejected" | "Excused" | "Unexcused"
-      AttendanceLogMethod: "RFID" | "Manual" | "WebApp"
+      ExcuseStatus: "Pending" | "Approved" | "Rejected"
+      LogMethod: "RFID" | "Manual"
+      LogStatus: "Late" | "On-time"
+      Role: "Performing" | "Non-performing" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
+      VoiceSection: "Soprano" | "Alto" | "Tenor" | "Bass"
+      Committee: "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
+      ExcuseType: "Absence" | "Late" | "Step Out" | "Leave Early"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -188,25 +213,30 @@ export type Tables<
     | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    ? keyof (
+        Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"]
+      )
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (
+      Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"]
+    )[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
-        Database["public"]["Views"])
-    ? (Database["public"]["Tables"] &
-        Database["public"]["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+  : PublicTableNameOrOptions extends keyof (
+      Database["public"]["Tables"] &
+      Database["public"]["Views"]
+    )
+  ? (Database["public"]["Tables"] & Database["public"]["Views"])[PublicTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
     : never
+  : never
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -222,12 +252,12 @@ export type TablesInsert<
     ? I
     : never
   : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
     : never
+  : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -243,12 +273,12 @@ export type TablesUpdate<
     ? U
     : never
   : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-    ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
     : never
+  : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -258,13 +288,7 @@ export type Enums<
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? Database["public"]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
-    ? Database["public"]["Enums"][PublicEnumNameOrOptions]
-    : never
-/*
-Note on Enums:
-- AttendanceLogMethod: Your schema specified a DEFAULT 'RFID'. I've added "Manual" as a common alternative.
-- Status: Your schema specified a DEFAULT 'Pending'. I've added "Approved" and "Rejected" as common alternatives.
-Please review and adjust these Enum values if they don't match your application's requirements.
-*/
+  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
+  : never

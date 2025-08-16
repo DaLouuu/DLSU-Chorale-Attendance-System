@@ -1,86 +1,126 @@
 import { createClient } from "@/utils/supabase/server"
-import type { Database, Status, AttendanceLogMethod } from "@/types/database.types"
+import type { Database } from "@/types/database.types"
 
-// ACCOUNTS (formerly USERS)
-export async function getAccountByAuthUserId(authUserId: string) {
+// PROFILES (formerly ACCOUNTS)
+export async function getProfileByAuthUserId(authUserId: string) {
   const supabase = await createClient();
-  return supabase.from("accounts").select("*").eq("auth_user_id", authUserId).single();
+  return supabase.from("profiles").select("*").eq("auth_user_id", authUserId).single();
 }
-export async function getAccountById(id: number) {
+
+export async function getProfileById(id: string) {
   const supabase = createClient()
-  return supabase.from("accounts").select("*").eq("account_id", id).single()
+  return supabase.from("profiles").select("*").eq("id", id).single()
 }
-export async function createAccount(account: Database["public"]["Tables"]["accounts"]["Insert"]) {
+
+export async function createProfile(profile: Database["public"]["Tables"]["profiles"]["Insert"]) {
   const supabase = await createClient();
-  return supabase.from("accounts").insert([account]);
+  return supabase.from("profiles").insert([profile]);
 }
-export async function updateAccount(id: number, updates: Partial<Database["public"]["Tables"]["accounts"]["Update"]>) {
+
+export async function updateProfile(id: string, updates: Partial<Database["public"]["Tables"]["profiles"]["Update"]>) {
   const supabase = createClient()
-  return supabase.from("accounts").update(updates).eq("account_id", id)
+  return supabase.from("profiles").update(updates).eq("id", id)
 }
-export async function deleteAccount(id: number) {
+
+export async function deleteProfile(id: string) {
   const supabase = createClient()
-  return supabase.from("accounts").delete().eq("account_id", id)
+  return supabase.from("profiles").delete().eq("id", id)
 }
 
 // ATTENDANCE LOGS
-export async function getAttendanceLogsByUser(userID: number) {
+export async function getAttendanceLogsByUser(userID: string) {
   const supabase = createClient()
-  return supabase.from("attendancelogs").select("*").eq("account_id_fk", userID)
+  return supabase.from("attendance_logs").select("*").eq("profile_id_fk", userID)
 }
+
 export async function createAttendanceLog(
-  log: Database["public"]["Tables"]["attendancelogs"]["Insert"],
+  log: Database["public"]["Tables"]["attendance_logs"]["Insert"],
 ) {
   const supabase = await createClient();
-  return supabase.from("attendancelogs").insert([log]);
+  return supabase.from("attendance_logs").insert([log]);
 }
+
 export async function updateAttendanceLog(
-  userID: number,
-  timestamp: string,
-  updates: Partial<Database["public"]["Tables"]["attendancelogs"]["Update"]>,
+  logID: number,
+  updates: Partial<Database["public"]["Tables"]["attendance_logs"]["Update"]>,
 ): Promise<any> {
   const supabase = createClient()
-  return supabase.from("attendancelogs").update(updates).eq("account_id_fk", userID).eq("timestamp", timestamp)
+  return supabase.from("attendance_logs").update(updates).eq("log_id", logID)
 }
-export async function deleteAttendanceLog(userID: number, timestamp: string) {
+
+export async function deleteAttendanceLog(logID: number) {
   const supabase = createClient()
-  return supabase.from("attendancelogs").delete().eq("account_id_fk", userID).eq("timestamp", timestamp)
+  return supabase.from("attendance_logs").delete().eq("log_id", logID)
 }
 
 // EXCUSE REQUESTS
-export async function getExcuseRequestsByUser(userID: number) {
+export async function getExcuseRequestsByUser(userID: string) {
   const supabase = createClient()
-  return supabase.from("excuserequests").select("*").eq("account_id_fk", userID)
-}
-export async function createExcuseRequest(
-  request: Database["public"]["Tables"]["excuserequests"]["Insert"],
-) {
-  const supabase = await createClient();
-  return supabase.from("excuserequests").insert([request]);
-}
-export async function updateExcuseRequest(
-  userID: number,
-  date: string,
-  type: string,
-  updates: Partial<Database["public"]["Tables"]["excuserequests"]["Update"]>,
-): Promise<any> {
-  const supabase = createClient()
-  return supabase.from("excuserequests").update(updates).eq("account_id_fk", userID).eq("date", date).eq("type", type)
-}
-export async function deleteExcuseRequest(userID: number, date: string, type: string) {
-  const supabase = createClient()
-  return supabase.from("excuserequests").delete().eq("account_id_fk", userID).eq("date", date).eq("type", type)
+  return supabase.from("excuse_requests").select("*").eq("profile_id_fk", userID)
 }
 
-// DIRECTORY
+export async function createExcuseRequest(
+  request: Database["public"]["Tables"]["excuse_requests"]["Insert"],
+) {
+  const supabase = await createClient();
+  return supabase.from("excuse_requests").insert([request]);
+}
+
+export async function updateExcuseRequest(
+  requestID: number,
+  updates: Partial<Database["public"]["Tables"]["excuse_requests"]["Update"]>,
+): Promise<any> {
+  const supabase = createClient()
+  return supabase.from("excuse_requests").update(updates).eq("request_id", requestID)
+}
+
+export async function deleteExcuseRequest(requestID: number) {
+  const supabase = createClient()
+  return supabase.from("excuse_requests").delete().eq("request_id", requestID)
+}
+
+// REHEARSALS
+export async function getRehearsals() {
+  const supabase = createClient()
+  return supabase.from("rehearsals").select("*").order("reh_date", { ascending: false })
+}
+
+export async function getRehearsalById(rehearsalID: number) {
+  const supabase = createClient()
+  return supabase.from("rehearsals").select("*").eq("reh_id", rehearsalID).single()
+}
+
+export async function createRehearsal(
+  rehearsal: Database["public"]["Tables"]["rehearsals"]["Insert"],
+) {
+  const supabase = await createClient();
+  return supabase.from("rehearsals").insert([rehearsal]);
+}
+
+export async function updateRehearsal(
+  rehearsalID: number,
+  updates: Partial<Database["public"]["Tables"]["rehearsals"]["Update"]>,
+): Promise<any> {
+  const supabase = createClient()
+  return supabase.from("rehearsals").update(updates).eq("reh_id", rehearsalID)
+}
+
+export async function deleteRehearsal(rehearsalID: number) {
+  const supabase = createClient()
+  return supabase.from("rehearsals").delete().eq("reh_id", rehearsalID)
+}
+
+// DIRECTORY (keeping for backward compatibility if needed)
 export async function getDirectoryEntryByEmail(email: string) {
   const supabase = await createClient();
   return supabase.from("directory").select("*").eq("email", email).single();
 }
+
 export async function createDirectoryEntry(entry: Database["public"]["Tables"]["directory"]["Insert"]) {
   const supabase = await createClient();
   return supabase.from("directory").insert([entry]);
 }
+
 export async function updateDirectoryEntry(
   id: number,
   updates: Partial<Database["public"]["Tables"]["directory"]["Update"]>,
@@ -88,6 +128,7 @@ export async function updateDirectoryEntry(
   const supabase = createClient()
   return supabase.from("directory").update(updates).eq("id", id)
 }
+
 export async function deleteDirectoryEntry(id: number) {
   const supabase = createClient()
   return supabase.from("directory").delete().eq("id", id)

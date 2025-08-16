@@ -58,35 +58,35 @@ export default function DashboardPage() {
           return
         }
 
-        const { data: accountData, error: accountError } = await supabase
-          .from("accounts")
-          .select("user_type, name") // Added name for greeting potential
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
           .eq("auth_user_id", session.user.id)
           .single()
 
-        if (accountError) {
-          console.error("[DashboardPage] Error fetching user account data:", accountError)
+        if (profileError) {
+          console.error("[DashboardPage] Error fetching user profile data:", profileError)
           setUserRole("unknown")
-          if (accountError.code === 'PGRST116') { // No rows found
-            router.push("/auth/setup?from=dashboard_no_account")
+          if (profileError.code === 'PGRST116') { // No rows found
+            router.push("/auth/setup?from=dashboard_no_profile")
             return
           } else {
             // For other DB errors, maybe don't redirect to setup, could show an error or redirect to login
-            console.error("[DashboardPage] Other DB error fetching account, redirecting to login.")
+            console.error("[DashboardPage] Other DB error fetching profile, redirecting to login.")
             router.push("/login?error=db_error_dashboard")
           }
           return
         }
 
-        if (!accountData) {
+        if (!profileData) {
             // This case should ideally be caught by PGRST116, but as a fallback
             setUserRole("unknown")
-            router.push("/auth/setup?from=dashboard_no_account_fallback")
+            router.push("/auth/setup?from=dashboard_no_profile_fallback")
             return
         }
 
-        setUserRole(accountData.user_type === "admin" ? "admin" : "member")
-        // Potentially set user name here if you want to display it from accountData.name
+        setUserRole(profileData.role === "Executive Board" ? "admin" : "member")
+        // Potentially set user name here if you want to display it from profileData.full_name
       } catch (error) {
         console.error("[DashboardPage] Outer catch error in fetchUserRole:", error)
         setUserRole("unknown")

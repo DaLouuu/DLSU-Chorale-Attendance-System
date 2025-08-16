@@ -9,29 +9,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
-import { signInWithEmailPassword } from "@/lib/auth-actions"
+import { signInWithSchoolIdPassword } from "@/lib/auth-actions"
 
 export function LoginForm() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [email, setEmail] = useState("")
+  const [schoolId, setSchoolId] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleEmailPasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSchoolIdPasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!email || !password) {
-      toast.error("Please enter both email and password.")
+    if (!schoolId || !password) {
+      toast.error("Please enter both school ID and password.")
       return
     }
     setIsLoading(true)
     try {
       const formData = new FormData()
-      formData.append("email", email)
+      formData.append("schoolId", schoolId)
       formData.append("password", password)
 
-      const result = await signInWithEmailPassword(formData)
+      const result = await signInWithSchoolIdPassword(formData)
 
       if (result?.error) {
         toast.error(result.error.message || "Failed to login. Please try again.")
@@ -50,20 +50,20 @@ export function LoginForm() {
       <CardHeader className="space-y-1 text-center p-8">
         <CardTitle className="text-2xl font-bold text-[#09331f] dark:text-white">Welcome Back!</CardTitle>
         <CardDescription className="text-gray-600 dark:text-gray-300">
-          Enter your credentials to access your account.
+          Enter your school ID and password to access your account.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleEmailPasswordLogin}>
+      <form onSubmit={handleSchoolIdPasswordLogin}>
         <CardContent className="space-y-5">
           <div className="space-y-3">
-            <Label htmlFor="email" className="text-sm font-medium text-[#1B1B1B] dark:text-white">Email</Label>
+            <Label htmlFor="schoolId" className="text-sm font-medium text-[#1B1B1B] dark:text-white">School ID</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="schoolId"
+              name="schoolId"
+              type="text"
+              placeholder="Enter your school ID"
+              value={schoolId}
+              onChange={(e) => setSchoolId(e.target.value)}
               disabled={isLoading}
               required
               className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -88,7 +88,7 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               required
-              className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="border-[#09331f]/30 focus:ring-[#09331f]/30 dark:border-gray-600 dark:text-white"
             />
           </div>
           <Button type="submit" className="w-full bg-[#09331f] hover:bg-[#09331f]/90 text-white" disabled={isLoading}>

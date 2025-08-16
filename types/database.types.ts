@@ -9,10 +9,13 @@ export type Json =
 export type ExcuseStatus = "Pending" | "Approved" | "Rejected"
 export type LogMethod = "RFID" | "Manual"
 export type LogStatus = "Late" | "On-time"
-export type Role = "Performing" | "Non-performing" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
+export type Role = "Not Applicable" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
 export type VoiceSection = "Soprano" | "Alto" | "Tenor" | "Bass"
 export type Committee = "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
 export type ExcuseType = "Absence" | "Late" | "Step Out" | "Leave Early"
+export type MembershipStatus = "Trainee" | "Junior Member" | "Senior Member"
+export type CurrentTermStat = "Inactive" | "Active (Performing)" | "Active (Non-performing)" | "Honorary (Graduating)" | "On Leave of Absence (LOA)" | "Resigned" | "Withdrawn Unofficially"
+export type SecHeadType = "Not Applicable" | "Logistical" | "Musical"
 
 export interface Database {
   public: {
@@ -21,41 +24,68 @@ export interface Database {
         Row: {
           id: string
           email: string | null
-          full_name: string | null
           avatar_url: string | null
           created_at: string
           updated_at: string
           committee: Committee | null
-          role: Role | null
-          is_sechead: boolean
           section: VoiceSection | null
           school_id: number | null
+          degree_code: string | null
+          college: string | null
+          membership_status: MembershipStatus | null
+          current_term_status: CurrentTermStat | null
+          birthday: string | null
+          last_name: string | null
+          first_name: string | null
+          middle_name: string | null
+          nickname: string | null
+          contact_number: number | null
+          sechead_type: SecHeadType
+          role: Role | null
         }
         Insert: {
           id?: string
           email?: string | null
-          full_name?: string | null
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
           committee?: Committee | null
-          role?: Role | null
-          is_sechead?: boolean
           section?: VoiceSection | null
           school_id?: number | null
+          degree_code?: string | null
+          college?: string | null
+          membership_status?: MembershipStatus | null
+          current_term_status?: CurrentTermStat | null
+          birthday?: string | null
+          last_name?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          nickname?: string | null
+          contact_number?: number | null
+          sechead_type?: SecHeadType
+          role?: Role | null
         }
         Update: {
           id?: string
           email?: string | null
-          full_name?: string | null
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
           committee?: Committee | null
-          role?: Role | null
-          is_sechead?: boolean
           section?: VoiceSection | null
           school_id?: number | null
+          degree_code?: string | null
+          college?: string | null
+          membership_status?: MembershipStatus | null
+          current_term_status?: CurrentTermStat | null
+          birthday?: string | null
+          last_name?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          nickname?: string | null
+          contact_number?: number | null
+          sechead_type?: SecHeadType
+          role?: Role | null
         }
         Relationships: [
           {
@@ -217,10 +247,13 @@ export interface Database {
       ExcuseStatus: "Pending" | "Approved" | "Rejected"
       LogMethod: "RFID" | "Manual"
       LogStatus: "Late" | "On-time"
-      Role: "Performing" | "Non-performing" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
+      Role: "Not Applicable" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
       VoiceSection: "Soprano" | "Alto" | "Tenor" | "Bass"
       Committee: "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
       ExcuseType: "Absence" | "Late" | "Step Out" | "Leave Early"
+      MembershipStatus: "Trainee" | "Junior Member" | "Senior Member"
+      CurrentTermStat: "Inactive" | "Active (Performing)" | "Active (Non-performing)" | "Honorary (Graduating)" | "On Leave of Absence (LOA)" | "Resigned" | "Withdrawn Unofficially"
+      SecHeadType: "Not Applicable" | "Logistical" | "Musical"
     }
     CompositeTypes: {
       [_ in never]: never

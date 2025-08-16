@@ -25,7 +25,6 @@ export async function signInWithEmailPassword(formData: FormData) {
   });
 
   if (error) {
-    console.error("Sign in error:", error);
     return { error: { message: error.message || "Invalid login credentials. Please try again.", code: error.code } };
   }
 
@@ -76,7 +75,6 @@ export async function signInWithSchoolIdPassword(formData: FormData) {
     });
 
     if (authError) {
-      console.error("Authentication error:", authError);
       return { error: { message: authError.message || "Invalid password. Please try again.", code: authError.code } };
     }
 
@@ -84,8 +82,6 @@ export async function signInWithSchoolIdPassword(formData: FormData) {
     // Note: redirect() throws a special error that Next.js catches internally
     redirect('/dashboard');
   } catch (error) {
-    console.error("Sign in error:", error)
-    
     // Handle Next.js redirects specially
     if (error && typeof error === 'object' && 'message' in error && error.message === 'NEXT_REDIRECT') {
       throw error // Re-throw Next.js redirects

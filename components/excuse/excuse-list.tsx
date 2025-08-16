@@ -28,11 +28,11 @@ export function ExcuseList({ excuses, onApprove, onDecline }: ExcuseListProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="/placeholder.svg" alt={excuse.profiles?.full_name || "Unknown"} />
-                <AvatarFallback>{(excuse.profiles?.full_name || "U").charAt(0)}</AvatarFallback>
+                <AvatarImage src="/placeholder.svg" alt={`${excuse.profiles?.first_name || ""} ${excuse.profiles?.last_name || ""}` || "Unknown"} />
+                <AvatarFallback>{((excuse.profiles?.first_name || "") + (excuse.profiles?.last_name || "") || "U").charAt(0)}</AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="font-medium text-foreground">{excuse.profiles?.full_name || "Unknown"}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-foreground">{`${excuse.profiles?.first_name || ""} ${excuse.profiles?.last_name || ""}` || "Unknown"}</h3>
                 <div className="text-sm text-muted-foreground capitalize">
                   {excuse.profiles?.section || "Unknown"} • {excuse.profiles?.committee || "No Committee"}
                 </div>

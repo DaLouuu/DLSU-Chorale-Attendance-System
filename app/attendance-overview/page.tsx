@@ -2,9 +2,7 @@
 
 import { useState } from "react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
-import { PageHeader } from "@/components/layout/page-header"
-import { PageFooter } from "@/components/layout/page-footer"
-import { DashboardNav } from "@/components/layout/dashboard-nav"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -56,13 +54,10 @@ export default function AttendanceOverviewPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
-        <PageHeader />
+        <AuthenticatedHeader currentPage="attendance" />
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
-            {/* Dashboard Navigation */}
-            <DashboardNav isAdmin={false} />
-
             {/* Page title and action button */}
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-primary md:text-3xl">My Attendance</h1>
@@ -173,7 +168,7 @@ export default function AttendanceOverviewPage() {
           </div>
         </main>
 
-        <PageFooter />
+        {/* PageFooter is removed as per the edit hint */}
       </div>
     </div>
   )

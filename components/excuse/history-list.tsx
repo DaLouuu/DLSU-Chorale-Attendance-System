@@ -26,11 +26,11 @@ export function HistoryList({ historyItems, onEditApproval }: HistoryListProps) 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="/placeholder.svg" alt={item.profiles?.full_name || "Unknown"} />
-                <AvatarFallback>{(item.profiles?.full_name || "U").charAt(0)}</AvatarFallback>
+                <AvatarImage src="/placeholder.svg" alt={`${item.profiles?.first_name || ""} ${item.profiles?.last_name || ""}` || "Unknown"} />
+                <AvatarFallback>{((item.profiles?.first_name || "") + (item.profiles?.last_name || "") || "U").charAt(0)}</AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="font-medium text-gray-900">{item.profiles?.full_name || "Unknown"}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-gray-900">{`${item.profiles?.first_name || ""} ${item.profiles?.last_name || ""}` || "Unknown"}</h3>
                 <div className="text-sm text-gray-500 capitalize">
                   {item.profiles?.section || "Unknown"} • {item.profiles?.committee || "No Committee"}
                 </div>

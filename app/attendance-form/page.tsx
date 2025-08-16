@@ -1,12 +1,10 @@
 "use client"
 import Image from "next/image"
 import Link from "next/link"
-import { PageHeader } from "@/components/layout/page-header"
-import { PageFooter } from "@/components/layout/page-footer"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { AttendanceExcuseForm } from "@/components/attendance/excuse-form"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { DashboardNav } from "@/components/layout/dashboard-nav"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
@@ -68,13 +66,11 @@ export default function AttendanceExcusePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="flex min-h-screen flex-col">
-        <PageHeader />
+        <AuthenticatedHeader currentPage="excuse-form" />
 
         {/* Main content */}
         <main className="flex-1 flex flex-col items-center p-4">
           <div className="w-full max-w-4xl mb-6">
-            <DashboardNav isAdmin={isAdmin} />
-
             <Button variant="ghost" size="sm" asChild className="mb-6 dark:text-white">
               <Link href={isAdmin ? "/admin/attendance-overview" : "/attendance-overview"}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -102,7 +98,7 @@ export default function AttendanceExcusePage() {
           </div>
         </main>
 
-        <PageFooter />
+        {/* PageFooter is removed as per the edit hint */}
       </div>
     </div>
   )

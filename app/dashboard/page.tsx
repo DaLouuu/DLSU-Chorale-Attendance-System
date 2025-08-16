@@ -3,29 +3,24 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import Link from "next/link"
-import Image from "next/image"
 import {
-  Menu,
   FileText,
   Music,
   User,
   Calendar,
   Bell,
-  X,
   ClipboardList,
   Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
-import { signOutUser } from "@/lib/auth-actions"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 
 // Attendance status types
 type UserRole = "member" | "admin" | "unknown"
 
 export default function DashboardPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [userRole, setUserRole] = useState<UserRole>("unknown")
   const [loadingUserRole, setLoadingUserRole] = useState(true)
@@ -105,11 +100,6 @@ export default function DashboardPage() {
   const dayName = format(currentDate, "EEE")
   const monthDay = format(currentDate, "MMM d")
 
-  // Function to handle sign out
-  const handleSignOut = async () => {
-    await signOutUser()
-  }
-
   if (loadingUserRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -124,134 +114,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="bg-[#09331f] dark:bg-[#09331f] text-white shadow-md">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/images/dlsu-chorale-logo.png"
-              alt="DLSU Chorale Logo"
-              width={36}
-              height={48}
-              className="hidden sm:block"
-            />
-            <h1 className="text-xl font-bold tracking-tight">DLSU CHORALE</h1>
-          </div>
-
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-[#0a4429]">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="p-0 border-none w-[280px] sm:w-[320px] dark:bg-gray-800 dark:border-gray-700">
-              <div className="flex flex-col h-full">
-                <div className="p-4 flex justify-end">
-                  <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)}>
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                {/* Add DialogTitle for accessibility */}
-                <SheetTitle className="sr-only">
-                  Navigation Menu
-                </SheetTitle>
-
-                <nav className="flex-1 px-4">
-                  <div className="space-y-1 mb-8">
-                    <Link
-                      href="/dashboard"
-                      className="block py-3 font-medium text-[#09331f] dark:text-white border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      href={userRole === "admin" ? "/admin/attendance-overview" : "/attendance-overview"}
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Attendance Overview
-                    </Link>
-                     <Link
-                      href={userRole === "admin" ? "/admin/all-events" : "/performances"}
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {userRole === "admin" ? "All Events (Admin)" : "Performances & Events"}
-                    </Link>
-                    <Link
-                      href="/notifications"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Notifications
-                    </Link>
-                    {userRole === "admin" && (
-                      <>
-                        <Link
-                          href="/admin/member-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Member Management
-                        </Link>
-                        <Link
-                          href="/admin/excuse-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Excuse Management
-                        </Link>
-                        <Link
-                          href="/admin/directory-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Directory Management
-                        </Link>
-                      </>
-                    )}
-                    <Link
-                      href="/resources"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Resources
-                    </Link>
-                  </div>
-
-                  <div className="space-y-1 mt-auto">
-                    <Link
-                      href="/profile"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left py-3 font-medium text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </nav>
-                <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-                  DLSU Chorale Attendance v1.0
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+      <AuthenticatedHeader currentPage="dashboard" />
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6 sm:py-8">

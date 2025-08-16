@@ -201,7 +201,7 @@ export function ExcuseApprovalContent() {
             setHistoryItemToDecline(null)
           }}
           onConfirm={handleDeclineConfirm}
-          excuseName={excuseToDecline?.profiles?.full_name || historyItemToDecline?.profiles?.full_name || ""}
+          excuseName={excuseToDecline?.profiles ? `${excuseToDecline.profiles.first_name || ""} ${excuseToDecline.profiles.last_name || ""}` : historyItemToDecline?.profiles ? `${historyItemToDecline.profiles.first_name || ""} ${historyItemToDecline.profiles.last_name || ""}` : ""}
           excuseType={excuseToDecline?.excuse_type || historyItemToDecline?.excuse_type || ""}
           excuseDate={excuseToDecline?.request_date || historyItemToDecline?.request_date || ""}
         />

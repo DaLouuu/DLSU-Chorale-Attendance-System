@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/components/layout/page-header"
-import { PageFooter } from "@/components/layout/page-footer"
-import { DashboardNav } from "@/components/layout/dashboard-nav"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -51,12 +49,12 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen flex-col">
-        <PageHeader />
+        <AuthenticatedHeader currentPage="settings" />
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
             {/* Dashboard Navigation */}
-            <DashboardNav />
+            {/* Removed DashboardNav */}
 
             <h1 className="text-2xl font-bold text-primary md:text-3xl mb-6">Settings</h1>
 
@@ -124,7 +122,7 @@ export default function SettingsPage() {
           </div>
         </main>
 
-        <PageFooter />
+        {/* Removed PageFooter */}
       </div>
     </div>
   )

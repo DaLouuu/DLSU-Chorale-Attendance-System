@@ -1,11 +1,9 @@
 "use client"
 
-import { LoginForm } from "@/components/auth/login-form"
-import { GalleryBackground } from "@/components/ui/gallery-background"
 import { PageHeader } from "@/components/layout/page-header"
 import { useTheme } from "@/components/theme-provider"
 
-export default function LoginPage() {
+export default function ContactPage() {
   const { theme } = useTheme()
   // Check if we're in dark mode (either manual dark or system dark)
   const isDarkMode = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -13,15 +11,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background">
       <PageHeader />
-      <GalleryBackground />
       <div className="flex min-h-screen flex-col relative z-10 pt-16">
         <main className="flex-1 flex items-center justify-center py-12 px-4">
-          <div className="w-full max-w-md">
-            <div className="flex flex-col items-center space-y-6 text-center mb-8">
-              <h1 className="text-3xl font-bold tracking-tight text-white">Welcome Back, Cho-sama!</h1>
-              <p className="text-sm text-white/80">Enter your school ID number and password to access your account.</p>
-            </div>
-            <LoginForm />
+          <div className="w-full max-w-4xl text-center">
+            <h1 className="text-4xl font-bold tracking-tight mb-6">Contact Us</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Get in touch with the DLSU Chorale. Whether you have questions about performances, 
+              want to join our group, or need information about upcoming events, we're here to help.
+            </p>
           </div>
         </main>
 

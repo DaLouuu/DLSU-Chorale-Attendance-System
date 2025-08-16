@@ -100,14 +100,19 @@ export default function SetupPage() {
 
         const profileToInsert = {
           school_id: directoryData.school_id,
-          auth_user_id: session.user.id,
-          full_name: session.user.user_metadata.full_name || session.user.user_metadata.name || registrationData.full_name || "User",
-          user_type: registrationData.user_type,
-          role: registrationData.adminRole || null,
+          id: session.user.id,
+          first_name: session.user.user_metadata.first_name || session.user.user_metadata.name?.split(' ')[0] || "User",
+          last_name: session.user.user_metadata.last_name || session.user.user_metadata.name?.split(' ').slice(1).join(' ') || "",
+          middle_name: session.user.user_metadata.middle_name || null,
+          nickname: session.user.user_metadata.nickname || null,
+          email: session.user.email,
+          role: registrationData.adminRole || "Not Applicable",
           committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
-          is_execboard: registrationData.is_execboard || false,
-          is_admin: registrationData.is_sechead || false,
+          sechead_type: "Not Applicable",
+          membership_status: "Trainee",
+          current_term_status: "Active (Performing)",
+          contact_number: null,
         }
         console.log("[SetupPage] Data to insert into 'profiles':", profileToInsert)
 
@@ -124,7 +129,7 @@ export default function SetupPage() {
         localStorage.removeItem("registrationData")
         toast.success("Registration successful!")
 
-        if (profileToInsert.is_admin) {
+        if (profileToInsert.role === "Executive Board" || profileToInsert.role === "Company Manager" || profileToInsert.role === "Associate Company Manager") {
           console.log("[SetupPage] Redirecting new admin to /admin/attendance-overview")
           router.push("/admin/attendance-overview")
         } else {

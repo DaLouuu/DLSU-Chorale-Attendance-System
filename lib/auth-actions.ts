@@ -83,14 +83,14 @@ export async function signInWithSchoolIdPassword(formData: FormData) {
     // On successful sign-in, redirect to dashboard
     // Note: redirect() throws a special error that Next.js catches internally
     redirect('/dashboard');
-  } catch (error: any) {
-    // Check if this is a Next.js redirect (which is not an actual error)
-    if (error?.digest?.includes('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
-      // This is a successful redirect, not an error
-      throw error; // Re-throw to let Next.js handle the redirect
+  } catch (error) {
+    console.error("Sign in error:", error)
+    
+    // Handle Next.js redirects specially
+    if (error && typeof error === 'object' && 'message' in error && error.message === 'NEXT_REDIRECT') {
+      throw error // Re-throw Next.js redirects
     }
     
-    console.error("Unexpected error during school ID authentication:", error);
-    return { error: { message: `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`, code: "unknown_error" } };
+    throw new Error("Failed to sign in")
   }
 } 

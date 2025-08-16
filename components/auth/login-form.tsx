@@ -1,20 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import { createClient } from "@/utils/supabase/client" // Import the browser client
-import { signInWithSchoolIdPassword } from "@/lib/auth-actions" // Import the server action
+import Link from "next/link"
+import { toast } from "@/hooks/use-toast"
+import { signInWithSchoolIdPassword } from "@/lib/auth-actions"
 
 export function LoginForm() {
-  const router = useRouter()
-  const supabase = createClient() // Instantiate the browser client
-
   const [schoolId, setSchoolId] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +17,11 @@ export function LoginForm() {
   const handleSchoolIdPasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!schoolId || !password) {
-      toast.error("Please enter both school ID and password.")
+      toast({
+        title: "Error",
+        description: "Please enter both school ID and password.",
+        variant: "destructive"
+      })
       return
     }
     setIsLoading(true)
@@ -34,15 +33,20 @@ export function LoginForm() {
       const result = await signInWithSchoolIdPassword(formData)
 
       if (result?.error) { // Server action will redirect on success, so only handle error here
-        toast.error(result.error.message || "Failed to login. Please try again.")
+        toast({
+          title: "Error",
+          description: result.error.message || "Failed to login. Please try again.",
+          variant: "destructive"
+        })
         console.error("Login error from server action:", result.error)
       }
       // No toast.success here, as successful login redirects from server action.
       // router.refresh() or router.push() are also not strictly needed here due to server-side redirect.
 
-    } catch (error: any) {
+    } catch (error) {
       // Check if this is a Next.js redirect (which is not an actual error)
-      if (error?.digest?.includes('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+      const errorObj = error as { message?: string; digest?: string }
+      if (errorObj?.message?.includes('NEXT_REDIRECT') || errorObj?.digest?.includes('NEXT_REDIRECT')) {
         // This is a successful redirect, not an error - do nothing
         console.log("Login successful, redirecting...")
         return
@@ -51,7 +55,11 @@ export function LoginForm() {
       // This catch block is for unexpected errors during the client-side part 
       // or if the server action itself throws an unhandled exception (not a returned error object).
       console.error("Unexpected login error:", error)
-      toast.error("An unexpected error occurred during login.")
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during login.",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }

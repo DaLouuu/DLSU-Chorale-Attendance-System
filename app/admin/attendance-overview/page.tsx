@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from "date-fns"
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns"
 import { ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { PageFooter } from "@/components/layout/page-footer"
@@ -21,55 +21,72 @@ const mockExcuses = [
     id: "1",
     name: "Tralalero Tralala",
     voiceSection: "alto",
-    voiceNumber: 1,
+    voiceNumber: "1",
     type: "ABSENT",
-    date: new Date(2025, 4, 8), // September 21, 2025
+    date: "2025-05-08",
+    reason: "Medical appointment",
+    status: "PENDING" as const,
+    notes: "Will provide medical certificate"
   },
   {
     id: "2",
     name: "Tung Tung Tung Sahur",
     voiceSection: "tenor",
-    voiceNumber: 1,
+    voiceNumber: "1",
     type: "ABSENT",
-    date: new Date(2025, 4, 6), // September 21, 2025
+    date: "2025-05-06",
+    reason: "Family emergency",
+    status: "APPROVED" as const,
+    notes: "Emergency travel required"
   },
   {
     id: "3",
     name: "Tenorino Cappuccino",
     voiceSection: "tenor",
-    voiceNumber: 1,
+    voiceNumber: "1",
     type: "ABSENT",
-    date: new Date(2025, 4, 7), // September 21, 2025
+    date: "2025-05-07",
+    reason: "Academic conflict",
+    status: "PENDING" as const,
+    notes: "Final exam schedule conflict"
   },
   {
     id: "4",
     name: "Dana Guillarte",
     voiceSection: "soprano",
-    voiceNumber: 1,
+    voiceNumber: "1",
     type: "ABSENT",
-    date: new Date(2025, 4, 8), // September 22, 2025
+    date: "2025-05-08",
+    reason: "Transportation issue",
+    status: "DECLINED" as const,
+    notes: "No valid reason provided"
   },
   {
     id: "5",
     name: "Marian Ariaga",
     voiceSection: "alto",
-    voiceNumber: 2,
+    voiceNumber: "2",
     type: "LATE",
-    date: new Date(2025, 4, 9), // September 23, 2025
+    date: "2025-05-09",
+    reason: "Traffic delay",
+    status: "APPROVED" as const,
+    notes: "Heavy traffic on EDSA"
   },
   {
     id: "6",
     name: "Kean Genota",
     voiceSection: "bass",
-    voiceNumber: 2,
+    voiceNumber: "2",
     type: "ABSENT",
-    date: new Date(2025, 4, 7), // September 24, 2025
+    date: "2025-05-07",
+    reason: "Personal matter",
+    status: "PENDING" as const,
+    notes: "Family event"
   },
 ]
 
 export default function AttendanceOverviewPage() {
   const today = new Date()
-  const [currentDate, setCurrentDate] = useState(today)
   const [selectedDate, setSelectedDate] = useState(today)
   const [currentWeek, setCurrentWeek] = useState(
     eachDayOfInterval({
@@ -78,19 +95,33 @@ export default function AttendanceOverviewPage() {
     }),
   )
   const [activeVoice, setActiveVoice] = useState("all")
-  const [selectedExcuse, setSelectedExcuse] = useState(null)
+  const [selectedExcuse, setSelectedExcuse] = useState<typeof mockExcuses[0] | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   // Update week when navigating
-  const navigateWeek = (direction) => {
-    if (direction === "next") {
-      const nextWeekStart = addWeeks(currentWeek[0], 1)
-      const nextWeekEnd = addWeeks(currentWeek[6], 1)
-      setCurrentWeek(eachDayOfInterval({ start: nextWeekStart, end: nextWeekEnd }))
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentWeek(prev => {
+        const newStartDate = new Date(prev[0])
+        newStartDate.setDate(newStartDate.getDate() - 7)
+        const newEndDate = new Date(prev[6])
+        newEndDate.setDate(newEndDate.getDate() - 7)
+        return eachDayOfInterval({
+          start: newStartDate,
+          end: newEndDate,
+        })
+      })
     } else {
-      const prevWeekStart = subWeeks(currentWeek[0], 1)
-      const prevWeekEnd = subWeeks(currentWeek[6], 1)
-      setCurrentWeek(eachDayOfInterval({ start: prevWeekStart, end: prevWeekEnd }))
+      setCurrentWeek(prev => {
+        const newStartDate = new Date(prev[0])
+        newStartDate.setDate(newStartDate.getDate() + 7)
+        const newEndDate = new Date(prev[6])
+        newEndDate.setDate(newEndDate.getDate() + 7)
+        return eachDayOfInterval({
+          start: newStartDate,
+          end: newEndDate,
+        })
+      })
     }
   }
 
@@ -103,18 +134,19 @@ export default function AttendanceOverviewPage() {
   }
 
   // Count excuses for each day in the week
-  const getExcuseCountForDay = (day) => {
-    return mockExcuses.filter((excuse) => isSameDay(excuse.date, day)).length
+  const getExcuseCountForDay = (day: Date) => {
+    const dayString = format(day, "yyyy-MM-dd")
+    return mockExcuses.filter((excuse) => excuse.date === dayString).length
   }
 
   // View excuse details
-  const viewExcuseDetails = (excuse) => {
+  const viewExcuseDetails = (excuse: typeof mockExcuses[0]) => {
     setSelectedExcuse(excuse)
     setIsDetailOpen(true)
   }
 
   // Get day abbreviation
-  const getDayAbbreviation = (day) => {
+  const getDayAbbreviation = (day: Date) => {
     const dayNames = ["S", "M", "T", "W", "Th", "F", "S"]
     return dayNames[day.getDay()]
   }
@@ -312,7 +344,21 @@ export default function AttendanceOverviewPage() {
             <DialogHeader>
               <DialogTitle>Excuse Details</DialogTitle>
             </DialogHeader>
-            <ExcuseDetailView excuse={selectedExcuse} />
+            <ExcuseDetailView 
+              excuse={selectedExcuse} 
+              isOpen={isDetailOpen}
+              onClose={() => setIsDetailOpen(false)}
+              onApprove={(id) => {
+                // Handle approve logic
+                console.log('Approving excuse:', id)
+                setIsDetailOpen(false)
+              }}
+              onDecline={(id, reason) => {
+                // Handle decline logic
+                console.log('Declining excuse:', id, reason)
+                setIsDetailOpen(false)
+              }}
+            />
           </DialogContent>
         </Dialog>
       )}

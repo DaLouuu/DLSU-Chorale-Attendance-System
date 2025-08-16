@@ -31,16 +31,26 @@ export default function AttendanceOverviewPage() {
   ]
 
   // Get status for a specific day
-  const getAttendanceStatus = (day) => {
+  const getAttendanceStatus = (day: Date) => {
     const record = attendanceData.find((item) => isSameDay(item.date, day))
     return record ? record.status : null
   }
 
   // Navigate to previous/next month
-  const navigateMonth = (direction) => {
-    const newMonth = new Date(currentMonth)
-    newMonth.setMonth(newMonth.getMonth() + direction)
-    setCurrentMonth(newMonth)
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentMonth(prev => {
+        const newDate = new Date(prev)
+        newDate.setMonth(newDate.getMonth() - 1)
+        return newDate
+      })
+    } else {
+      setCurrentMonth(prev => {
+        const newDate = new Date(prev)
+        newDate.setMonth(newDate.getMonth() + 1)
+        return newDate
+      })
+    }
   }
 
   return (
@@ -63,13 +73,13 @@ export default function AttendanceOverviewPage() {
 
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4">
-              <Button variant="ghost" onClick={() => navigateMonth(-1)} className="text-primary">
+              <Button variant="ghost" onClick={() => navigateMonth('prev')} className="text-primary">
                 &larr; Previous Month
               </Button>
 
               <h2 className="text-xl font-semibold">{format(currentMonth, "MMMM yyyy")}</h2>
 
-              <Button variant="ghost" onClick={() => navigateMonth(1)} className="text-primary">
+              <Button variant="ghost" onClick={() => navigateMonth('next')} className="text-primary">
                 Next Month &rarr;
               </Button>
             </div>

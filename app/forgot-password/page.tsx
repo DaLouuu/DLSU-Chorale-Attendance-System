@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Forgot Password?</h1>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Don't worry, we can help you get back into your account.
+            Don&apos;t worry, we can help you get back into your account.
           </p>
         </div>
 
@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
               Contact Administrator
             </CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-300">
-              Since user accounts are managed by administrators, please contact your system administrator to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 p-8 pt-0">

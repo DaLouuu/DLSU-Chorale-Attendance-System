@@ -33,25 +33,24 @@ export async function createUserAccount(userData: CreateUserData) {
       return { error: { message: "Failed to create user", code: "user_creation_failed" } }
     }
 
-    // Then, create the account record in the accounts table
-    const { data: accountData, error: accountError } = await supabase
-      .from('accounts')
+    // Then, create the profile record in the profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
       .insert({
         auth_user_id: authData.user.id,
         email: userData.email,
-        name: userData.fullName,
+        full_name: userData.fullName,
         user_type: userData.userType,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
       .select()
       .single()
 
-    if (accountError) {
-      console.error("Error creating account record:", accountError)
-      // If account creation fails, we should clean up the auth user
+    if (profileError) {
+      console.error("Error creating profile record:", profileError)
+      // If profile creation fails, we should clean up the auth user
       await supabase.auth.admin.deleteUser(authData.user.id)
-      return { error: { message: accountError.message, code: accountError.code } }
+      return { error: { message: profileError.message, code: profileError.code } }
     }
 
     revalidatePath('/admin/member-management')
@@ -59,7 +58,7 @@ export async function createUserAccount(userData: CreateUserData) {
     return { 
       data: { 
         user: authData.user, 
-        account: accountData 
+        profile: profileData 
       }, 
       error: null 
     }
@@ -74,43 +73,25 @@ export async function updateUserAccount(userId: string, updates: Partial<CreateU
   const supabase = await createAdminClient()
   
   try {
-    // Update account record
-    const { data: accountData, error: accountError } = await supabase
-      .from('accounts')
+    // Update profile record
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
       .update({
-        name: updates.fullName,
+        full_name: updates.fullName,
         user_type: updates.userType,
-        updated_at: new Date().toISOString(),
       })
-      .eq('auth_user_id', userId)
+      .eq('id', userId)
       .select()
       .single()
 
-    if (accountError) {
-      console.error("Error updating account record:", accountError)
-      return { error: { message: accountError.message, code: accountError.code } }
-    }
-
-    // Update user metadata if name changed
-    if (updates.fullName) {
-      const { error: metadataError } = await supabase.auth.admin.updateUserById(
-        userId,
-        {
-          user_metadata: {
-            full_name: updates.fullName,
-          },
-        }
-      )
-
-      if (metadataError) {
-        console.error("Error updating user metadata:", metadataError)
-        return { error: { message: metadataError.message, code: metadataError.code } }
-      }
+    if (profileError) {
+      console.error("Error updating profile record:", profileError)
+      return { error: { message: profileError.message, code: profileError.code } }
     }
 
     revalidatePath('/admin/member-management')
     
-    return { data: accountData, error: null }
+    return { data: profileData, error: null }
 
   } catch (error) {
     console.error("Unexpected error in updateUserAccount:", error)
@@ -122,23 +103,15 @@ export async function deleteUserAccount(userId: string) {
   const supabase = await createAdminClient()
   
   try {
-    // Delete account record first
-    const { error: accountError } = await supabase
-      .from('accounts')
+    // Delete profile record first
+    const { error: profileError } = await supabase
+      .from('profiles')
       .delete()
-      .eq('auth_user_id', userId)
+      .eq('id', userId)
 
-    if (accountError) {
-      console.error("Error deleting account record:", accountError)
-      return { error: { message: accountError.message, code: accountError.code } }
-    }
-
-    // Then delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-
-    if (authError) {
-      console.error("Error deleting auth user:", authError)
-      return { error: { message: authError.message, code: authError.code } }
+    if (profileError) {
+      console.error("Error deleting profile record:", profileError)
+      return { error: { message: profileError.message, code: profileError.code } }
     }
 
     revalidatePath('/admin/member-management')

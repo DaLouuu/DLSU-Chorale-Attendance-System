@@ -1,8 +1,7 @@
-import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import type { Database, ExcuseStatus } from "@/types/database.types"
+import { createClient } from "@/utils/supabase/server"
 import { sendNotification } from "@/lib/notifications"
+import type { ExcuseStatus } from "@/types/database.types"
 
 // GET /api/admin/excuses?section=soprano&status=Pending,Approved,Rejected
 export async function GET(request: Request) {
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
   }
   
   // If section filter was applied and didn't work server-side, filter here:
-  const filteredData = section ? data?.filter((item: any) => (item.profiles as any)?.section === section) : data
+  const filteredData = section ? data?.filter((item: { profiles?: { section?: string } }) => item.profiles?.section === section) : data
 
   return NextResponse.json(filteredData)
 }

@@ -17,7 +17,7 @@ export function SteppingOutForm() {
   const [reason, setReason] = useState("")
   const [description, setDescription] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     // Validate form

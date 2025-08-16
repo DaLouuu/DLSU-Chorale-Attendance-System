@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { createClient } from "@/utils/supabase/client"
 import { createUserAccount, updateUserAccount, deleteUserAccount, resetUserPassword, type CreateUserData } from "@/lib/admin-actions"
-import { Plus, Edit, Trash2, Key, Users, UserPlus } from "lucide-react"
+import { Edit, Trash2, Key, Users, UserPlus } from "lucide-react"
 
 interface UserAccount {
   account_id: string
@@ -41,11 +41,7 @@ export default function MemberManagementPage() {
   const [newPassword, setNewPassword] = useState('')
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -61,7 +57,11 @@ export default function MemberManagementPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleCreateUser = async () => {
     try {

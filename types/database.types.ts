@@ -20,50 +20,47 @@ export interface Database {
       profiles: {
         Row: {
           id: string
-          auth_user_id: string | null
-          created_at: string
-          full_name: string | null
           email: string | null
-          section: VoiceSection | null
+          full_name: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
           committee: Committee | null
           role: Role | null
-          user_type: string | null
-          is_execboard: boolean
-          is_admin: boolean
-          school_id: string | null
+          is_sechead: boolean
+          section: VoiceSection | null
+          school_id: number | null
         }
         Insert: {
           id?: string
-          auth_user_id?: string | null
-          created_at?: string
-          full_name?: string | null
           email?: string | null
-          section?: VoiceSection | null
+          full_name?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
           committee?: Committee | null
           role?: Role | null
-          user_type?: string | null
-          is_execboard?: boolean
-          is_admin?: boolean
-          school_id?: string | null
+          is_sechead?: boolean
+          section?: VoiceSection | null
+          school_id?: number | null
         }
         Update: {
           id?: string
-          auth_user_id?: string | null
-          created_at?: string
-          full_name?: string | null
           email?: string | null
-          section?: VoiceSection | null
+          full_name?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
           committee?: Committee | null
           role?: Role | null
-          user_type?: string | null
-          is_execboard?: boolean
-          is_admin?: boolean
-          school_id?: string | null
+          is_sechead?: boolean
+          section?: VoiceSection | null
+          school_id?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_auth_user_id_fkey"
-            columns: ["auth_user_id"]
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -182,6 +179,30 @@ export interface Database {
           reh_date?: string
           reh_time?: string
           reh_name?: string | null
+        }
+        Relationships: []
+      }
+      directory: {
+        Row: {
+          id: number
+          created_at: string
+          school_id: number
+          email: string
+          full_name: string | null
+        }
+        Insert: {
+          id?: number
+          created_at?: string
+          school_id: number
+          email: string
+          full_name?: string | null
+        }
+        Update: {
+          id?: number
+          created_at?: string
+          school_id?: number
+          email?: string
+          full_name?: string | null
         }
         Relationships: []
       }

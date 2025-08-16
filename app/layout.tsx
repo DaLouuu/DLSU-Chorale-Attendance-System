@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider defaultTheme="system" storageKey="dlsu-chorale-theme">
           {children}
           <ScrollToTop />
           <Toaster richColors position="top-right" />

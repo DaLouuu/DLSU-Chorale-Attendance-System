@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ExcuseList } from "@/components/excuse/excuse-list"
-import { HistoryList } from "@/components/excuse/history-list"
-import { VoiceFilter } from "@/components/excuse/voice-filter"
-import { DeclineReasonDialog } from "@/components/excuse/decline-reason-dialog"
-import type { ExcuseRequest, ExcuseRequestWithProfile, ExcuseStatus } from "@/types/excuse"
+import { ExcuseList } from "./excuse-list"
+import { HistoryList } from "./history-list"
+import { VoiceFilter } from "./voice-filter"
+import { DeclineReasonDialog } from "./decline-reason-dialog"
+import type { ExcuseRequestWithProfile, ExcuseStatus } from "@/types/excuse"
 
 export function ExcuseApprovalContent() {
   const [activeTab, setActiveTab] = useState("pending")

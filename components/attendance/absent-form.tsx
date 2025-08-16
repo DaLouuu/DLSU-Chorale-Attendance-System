@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/hooks/use-toast"
 import { ExcuseReasonOptions } from "@/components/attendance/excuse-reason-options"
@@ -53,7 +52,7 @@ export function AbsentForm() {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id")
-        .eq("auth_user_id", session.user.id)
+        .eq("id", session.user.id)
         .single()
 
       if (profileError || !profileData) {

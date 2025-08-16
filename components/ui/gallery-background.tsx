@@ -1,48 +1,37 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 
-interface GalleryBackgroundProps {
-  className?: string
-}
-
-export function GalleryBackground({ className }: GalleryBackgroundProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [imagesLoaded, setImagesLoaded] = useState(false)
-
-  const images = [
+export function GalleryBackground() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  
+  const images = useMemo(() => [
+    "/images/choir-b2b-1.png",
+    "/images/choir-b2b-2.png", 
     "/images/choir-bcfc.png",
     "/images/choir-lpep.png",
-    "/images/choir-b2b-2.png",
-    "/images/choir-b2b-1.png",
-    "/images/choir-tet.png",
     "/images/choir-tcc.png",
-  ]
+    "/images/choir-tet.png"
+  ], [])
 
   useEffect(() => {
-    console.log("GalleryBackground mounted, images:", images)
-    setImagesLoaded(true)
-    
-    // Change active image every 6 seconds
     const interval = setInterval(() => {
-      setActiveImageIndex((prev) => (prev + 1) % images.length)
-    }, 6000)
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length)
+    }, 5000)
 
-    return () => {
-      clearInterval(interval)
-    }
+    return () => clearInterval(interval)
   }, [images.length])
 
   useEffect(() => {
-    console.log("Active image index:", activeImageIndex, "Image:", images[activeImageIndex])
-  }, [activeImageIndex, images])
+    console.log("Active image index:", currentImageIndex, "Image:", images[currentImageIndex])
+  }, [currentImageIndex, images])
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden bg-red-500">
       {/* Debug info - remove this later */}
       <div className="absolute top-0 left-0 z-50 bg-white text-black p-2 text-xs">
-        Debug: Active: {activeImageIndex}, Loaded: {imagesLoaded ? 'Yes' : 'No'}
+        Debug: Active: {currentImageIndex}, Loaded: {images.length > 0 ? 'Yes' : 'No'}
       </div>
       
       {/* Dark overlay - reduced opacity to see photos better */}
@@ -53,7 +42,7 @@ export function GalleryBackground({ className }: GalleryBackgroundProps) {
         <div
           key={src}
           className={`absolute inset-0 transition-opacity duration-2000 ease-in-out ${
-            index === activeImageIndex ? "opacity-100" : "opacity-0"
+            index === currentImageIndex ? "opacity-100" : "opacity-0"
           }`}
         >
           <Image

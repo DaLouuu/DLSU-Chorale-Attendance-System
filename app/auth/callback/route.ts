@@ -1,5 +1,4 @@
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
@@ -29,30 +28,30 @@ export async function GET(request: NextRequest) {
     if (session && session.user && session.user.email) {
       console.log("[Callback] Session retrieved for email:", session.user.email)
       
-      // Check if user exists in Accounts table
-      const { data: existingAccount, error: accountError } = await supabase
-        .from("accounts")
-        .select("auth_user_id, user_type")
-        .eq("auth_user_id", session.user.id)
+      // Check if user exists in Profiles table
+      const { data: existingProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", session.user.id)
         .single()
         
-      if (accountError && accountError.code !== 'PGRST116') {
-        console.error("[Callback] Accounts check database error:", accountError)
-        redirectTo = "/login?error=accounts_check_failed_callback"
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("[Callback] Profiles check database error:", profileError)
+        redirectTo = "/login?error=profiles_check_failed_callback"
         return NextResponse.redirect(new URL(redirectTo, request.url))
       }
 
-      if (existingAccount) {
-        console.log("[Callback] Account exists for user:", session.user.id, "Type:", existingAccount.user_type)
-        // Account exists, redirect to appropriate dashboard
-        if (existingAccount.user_type === "admin") {
+      if (existingProfile) {
+        console.log("[Callback] Profile exists for user:", session.user.id, "Role:", existingProfile.role)
+        // Profile exists, redirect to appropriate dashboard
+        if (existingProfile.role === "Executive Board") {
           redirectTo = "/admin/attendance-overview"
         } else {
           redirectTo = "/dashboard"
         }
       } else {
-        // No account found, redirect to setup
-        console.log("[Callback] No account found for user, redirecting to setup")
+        // No profile found, redirect to setup
+        console.log("[Callback] No profile found for user, redirecting to setup")
         redirectTo = "/auth/setup"
       }
     } else {

@@ -49,7 +49,7 @@ export default function SetupPage() {
         console.log(`[SetupPage] Attempting to query 'directory' for email: ${session.user.email}`)
         const { data: directoryData, error: directoryError } = await supabase
           .from("directory")
-          .select("id, email")
+          .select("id, email, school_id")
           .eq("email", session.user.email!)
           .single()
 
@@ -70,24 +70,24 @@ export default function SetupPage() {
         }
         console.log("[SetupPage] Directory data found:", directoryData)
 
-        console.log(`[SetupPage] Attempting to query 'accounts' for auth_user_id: ${session.user.id}`)
-        const { data: existingAccount, error: accountQueryError } = await supabase
-          .from("accounts")
-          .select("user_type, account_id")
-          .eq("auth_user_id", session.user.id)
+        console.log(`[SetupPage] Attempting to query 'profiles' for id: ${session.user.id}`)
+        const { data: existingProfile, error: profileQueryError } = await supabase
+          .from("profiles")
+          .select("role, id")
+          .eq("id", session.user.id)
           .single()
 
-        if (accountQueryError && accountQueryError.code !== 'PGRST116') {
-          console.error("[SetupPage] Accounts query error:", accountQueryError)
-          throw new Error(`Accounts query error: ${accountQueryError.message}`)
+        if (profileQueryError && profileQueryError.code !== 'PGRST116') {
+          console.error("[SetupPage] Profiles query error:", profileQueryError)
+          throw new Error(`Profiles query error: ${profileQueryError.message}`)
         }
-        console.log("[SetupPage] Existing account query result - data:", existingAccount, "error:", accountQueryError)
+        console.log("[SetupPage] Existing profile query result - data:", existingProfile, "error:", profileQueryError)
 
-        if (existingAccount) {
-          console.log("[SetupPage] Account already exists:", existingAccount)
-          toast.info("Account already set up.")
+        if (existingProfile) {
+          console.log("[SetupPage] Profile already exists:", existingProfile)
+          toast.info("Profile already set up.")
           setIsLoading(false);
-          if (existingAccount.user_type === "admin") {
+          if (existingProfile.role === "Executive Board") {
             console.log("[SetupPage] Redirecting existing admin to /admin/attendance-overview")
             router.push("/admin/attendance-overview")
           } else {
@@ -96,35 +96,35 @@ export default function SetupPage() {
           }
           return;
         }
-        console.log("[SetupPage] No existing account found. Proceeding to create one.")
+        console.log("[SetupPage] No existing profile found. Proceeding to create one.")
 
-        const accountToInsert = {
-          directory_id: directoryData.id,
+        const profileToInsert = {
+          school_id: directoryData.school_id,
           auth_user_id: session.user.id,
-          name: session.user.user_metadata.full_name || session.user.user_metadata.name || registrationData.full_name || "User",
+          full_name: session.user.user_metadata.full_name || session.user.user_metadata.name || registrationData.full_name || "User",
           user_type: registrationData.user_type,
           role: registrationData.adminRole || null,
           committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
           is_execboard: registrationData.is_execboard || false,
-          is_sechead: registrationData.is_sechead || false,
+          is_admin: registrationData.is_sechead || false,
         }
-        console.log("[SetupPage] Data to insert into 'accounts':", accountToInsert)
+        console.log("[SetupPage] Data to insert into 'profiles':", profileToInsert)
 
-        console.log("[SetupPage] Attempting to upsert into 'accounts'...")
-        const { error: insertError } = await supabase.from("accounts").upsert(accountToInsert)
+        console.log("[SetupPage] Attempting to upsert into 'profiles'...")
+        const { error: insertError } = await supabase.from("profiles").upsert(profileToInsert)
 
         if (insertError) {
-          console.error("[SetupPage] Insert/Upsert error into 'accounts':", insertError)
+          console.error("[SetupPage] Insert/Upsert error into 'profiles':", insertError)
           throw insertError // Re-throw to be caught by the main catch block
         }
-        console.log("[SetupPage] Successfully upserted data into 'accounts'.")
+        console.log("[SetupPage] Successfully upserted data into 'profiles'.")
 
         console.log("[SetupPage] Removing 'registrationData' from localStorage.")
         localStorage.removeItem("registrationData")
         toast.success("Registration successful!")
 
-        if (accountToInsert.user_type === "admin") {
+        if (profileToInsert.is_admin) {
           console.log("[SetupPage] Redirecting new admin to /admin/attendance-overview")
           router.push("/admin/attendance-overview")
         } else {

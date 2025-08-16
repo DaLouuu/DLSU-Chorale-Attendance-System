@@ -32,21 +32,21 @@ export default function AttendanceExcusePage() {
         }
 
         const { data: accountData, error: accountError } = await supabase
-          .from("accounts")
-          .select("user_type")
-          .eq("auth_user_id", session.user.id)
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
           .single()
 
         if (accountError) {
-          console.error("AttendanceExcusePage: Error fetching account data:", accountError)
+          console.error("AttendanceExcusePage: Error fetching profile data:", accountError)
           if (accountError.code === 'PGRST116') {
-             console.warn("AttendanceExcusePage: No account found for user, redirecting to setup.")
-             router.push("/auth/setup?from=attendance-form_no_account")
+             console.warn("AttendanceExcusePage: No profile found for user, redirecting to setup.")
+             router.push("/auth/setup?from=attendance-form_no_profile")
              return;
           }
         }
 
-        setIsAdmin(accountData?.user_type === "admin" || false)
+        setIsAdmin(accountData?.role === "Executive Board" || false)
         setLoading(false)
       } catch (error) {
         console.error("AttendanceExcusePage: Error in checkUserRole catch block:", error)

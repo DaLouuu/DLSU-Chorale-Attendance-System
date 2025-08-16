@@ -13,21 +13,20 @@ A comprehensive attendance management system for DLSU Chorale members.
 
 ## Tech Stack
 
-- Next.js 14 (App Router)
+- Next.js 15 (App Router)
 - TypeScript
 - Tailwind CSS
 - Supabase (Authentication, Database, Storage)
 - Resend (Email notifications)
-- Docker for deployment
+- pnpm for package management
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ and pnpm
 - Supabase account
 - Resend account for email notifications
-- Docker Desktop installed
 
 ### Environment Variables
 
@@ -42,25 +41,39 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 RESEND_API_KEY=your_resend_api_key
 ```
 
-### Installation
+### Local Development (Recommended)
 
 1. Clone the repository:
-   ```
+   ```bash
    git clone https://github.com/your-username/dlsu-chorale-attendance.git
    cd dlsu-chorale-attendance
    ```
 
 2. Install dependencies:
-   ```
-   npm install
+   ```bash
+   pnpm install
    ```
 
 3. Run the development server:
-   ```
-   npm run dev
+   ```bash
+   pnpm dev
    ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Alternative: Using npm
+
+If you prefer npm over pnpm:
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
 ### Database Setup
 
@@ -75,7 +88,9 @@ RESEND_API_KEY=your_resend_api_key
    ('test-admin@dlsu.edu.ph');
    ```
 
-## Docker Deployment
+## Docker Deployment (Optional)
+
+Docker is available for production deployment but not required for local development.
 
 ### Running with Docker
 

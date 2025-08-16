@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware' // Video's session refresher
-import { createClient } from '@/utils/supabase/server' // For DB checks
-// import type { Database } from "@/types/database.types" // Not strictly needed if just using client
+import { updateSession } from '@/utils/supabase/middleware'
+import { createClient } from '@/utils/supabase/server'
 
 export async function middleware(request: NextRequest) {
   console.log(`[Middleware] Incoming request: ${request.method} ${request.nextUrl.pathname}`)
@@ -16,7 +15,6 @@ export async function middleware(request: NextRequest) {
 
   if (sessionAuthError) {
     console.error("[Middleware] Error getting session:", sessionAuthError)
-    // Potentially redirect to an error page or allow response to pass through if updateSession handled it
     return response; 
   }
   console.log("[Middleware] Session data retrieved. Session exists:", !!session)
@@ -24,7 +22,7 @@ export async function middleware(request: NextRequest) {
     console.log("[Middleware] Session user ID:", session.user.id, "Email:", session.user.email)
   }
 
-  const publicRoutes = ["/login", "/register", "/unauthorized"]
+  const publicRoutes = ["/login", "/unauthorized"]
   const isPublicRoute = publicRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
   console.log(`[Middleware] Is public route (${request.nextUrl.pathname}):`, isPublicRoute)
 
@@ -44,8 +42,8 @@ export async function middleware(request: NextRequest) {
     console.log(`[Middleware] Session exists, not public, not auth. Checking account for path: ${request.nextUrl.pathname}`)
     console.log(`[Middleware] Querying 'accounts' for auth_user_id: ${session.user.id}`)
     const { data: accountData, error: accountError } = await supabase
-      .from("accounts") // Ensure lowercase table name
-      .select("user_type, account_id") // Changed from 'id' to 'account_id' for clarity if that's the PK
+      .from("accounts")
+      .select("user_type, account_id")
       .eq("auth_user_id", session.user.id)
       .single()
 
@@ -53,8 +51,6 @@ export async function middleware(request: NextRequest) {
 
     if (accountError && accountError.code !== 'PGRST116') {
       console.error("[Middleware] Database error fetching account (and not PGRST116):", accountError)
-      // Potentially redirect to a generic error page or just let the response pass? For now, letting pass.
-      // return NextResponse.redirect(new URL("/error-db", request.url))
     } else if (!accountData && request.nextUrl.pathname !== "/auth/setup") {
       // NO accountData (could be PGRST116 or genuinely null after no error)
       // AND we are NOT already trying to go to /auth/setup
@@ -65,8 +61,6 @@ export async function middleware(request: NextRequest) {
       const path = request.nextUrl.pathname
       if (path.startsWith("/admin") && accountData.user_type !== "admin") {
         console.warn("[Middleware] Non-admin attempting to access admin route. Redirecting to / (dashboard or attendance-form).")
-        // Redirect non-admins trying to access /admin routes to a sensible default page
-        // This could be /dashboard, or /attendance-form depending on your main page for members.
         return NextResponse.redirect(new URL("/attendance-form", request.url)) 
       }
       console.log("[Middleware] Account check passed. User type:", accountData.user_type)

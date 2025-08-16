@@ -14,40 +14,31 @@ export interface Database {
     Tables: {
       accounts: {
         Row: {
-          account_id: number
-          auth_user_id: string | null
-          committee: string | null
-          directory_id: number | null
-          is_execboard: boolean
-          is_sechead: boolean
-          name: string | null
-          role: string | null
-          section: string | null
-          user_type: string | null
+          account_id: string
+          auth_user_id: string
+          email: string
+          name: string
+          user_type: 'member' | 'admin'
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          account_id?: number // Generated, so optional
-          auth_user_id?: string | null
-          committee?: string | null
-          directory_id?: number | null
-          is_execboard?: boolean // DEFAULT false in DB
-          is_sechead?: boolean // DEFAULT false in DB
-          name?: string | null
-          role?: string | null
-          section?: string | null
-          user_type?: string | null
+          account_id?: string
+          auth_user_id: string
+          email: string
+          name: string
+          user_type: 'member' | 'admin'
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          account_id?: number
-          auth_user_id?: string | null
-          committee?: string | null
-          directory_id?: number | null
-          is_execboard?: boolean
-          is_sechead?: boolean
-          name?: string | null
-          role?: string | null
-          section?: string | null
-          user_type?: string | null
+          account_id?: string
+          auth_user_id?: string
+          email?: string
+          name?: string
+          user_type?: 'member' | 'admin'
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -56,35 +47,28 @@ export interface Database {
             isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "accounts_directory_id_fkey"
-            columns: ["directory_id"]
-            isOneToOne: true
-            referencedRelation: "directory"
-            referencedColumns: ["id"]
-          },
+          }
         ]
       }
       attendancelogs: {
         Row: {
-          account_id_fk: number
+          account_id_fk: string
           attendance_log_method: Database["public"]["Enums"]["AttendanceLogMethod"]
-          log_id: number
+          log_id: string
           synced: boolean | null
           timestamp: string
         }
         Insert: {
-          account_id_fk: number
-          attendance_log_method?: Database["public"]["Enums"]["AttendanceLogMethod"] // DEFAULT 'RFID'
-          log_id?: number // Generated, so optional
-          synced?: boolean | null // DEFAULT true
-          timestamp?: string // DEFAULT now()
+          account_id_fk: string
+          attendance_log_method?: Database["public"]["Enums"]["AttendanceLogMethod"]
+          log_id?: string
+          synced?: boolean | null
+          timestamp?: string
         }
         Update: {
-          account_id_fk?: number
+          account_id_fk?: string
           attendance_log_method?: Database["public"]["Enums"]["AttendanceLogMethod"]
-          log_id?: number
+          log_id?: string
           synced?: boolean | null
           timestamp?: string
         }
@@ -95,67 +79,91 @@ export interface Database {
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["account_id"]
-          },
+          }
         ]
       }
-      directory: {
+      excuses: {
         Row: {
-          email: string
-          id: number // This is the student ID
-        }
-        Insert: {
-          email: string
-          id: number // This is the student ID, not generated
-        }
-        Update: {
-          email?: string
-          id?: number
-        }
-        Relationships: []
-      }
-      excuserequests: {
-        Row: {
-          account_id_fk: number
-          date: string | null
-          eta: string | null // time with time zone
-          etd: string | null // time with time zone
-          notes: string | null
+          excuse_id: string
+          account_id_fk: string
+          event_id_fk: string
           reason: string
-          request_id: number
           status: Database["public"]["Enums"]["Status"]
-          type: string
+          submitted_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          decline_reason: string | null
         }
         Insert: {
-          account_id_fk: number
-          date?: string | null
-          eta?: string | null
-          etd?: string | null
-          notes?: string | null // DEFAULT 'null'::text
-          reason?: string // DEFAULT 'null'::text
-          request_id?: number // Generated, so optional
-          status?: Database["public"]["Enums"]["Status"] // DEFAULT 'Pending'
-          type: string
+          excuse_id?: string
+          account_id_fk: string
+          event_id_fk: string
+          reason: string
+          status?: Database["public"]["Enums"]["Status"]
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          decline_reason?: string | null
         }
         Update: {
-          account_id_fk?: number
-          date?: string | null
-          eta?: string | null
-          etd?: string | null
-          notes?: string | null
+          excuse_id?: string
+          account_id_fk?: string
+          event_id_fk?: string
           reason?: string
-          request_id?: number
           status?: Database["public"]["Enums"]["Status"]
-          type?: string
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          decline_reason?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "excuserequests_account_id_fkey"
+            foreignKeyName: "excuses_account_id_fk_fkey"
             columns: ["account_id_fk"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["account_id"]
-          },
+          }
         ]
+      }
+      events: {
+        Row: {
+          event_id: string
+          title: string
+          description: string | null
+          date: string
+          start_time: string | null
+          end_time: string | null
+          location: string | null
+          event_type: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          event_id?: string
+          title: string
+          description?: string | null
+          date: string
+          start_time?: string | null
+          end_time?: string | null
+          location?: string | null
+          event_type: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          title?: string
+          description?: string | null
+          date?: string
+          start_time?: string | null
+          end_time?: string | null
+          location?: string | null
+          event_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -165,8 +173,8 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      AttendanceLogMethod: "RFID" | "Manual" // Assuming 'Manual' as another option. Please verify.
-      Status: "Pending" | "Approved" | "Rejected" // Assuming these are the states. Please verify.
+      Status: "Pending" | "Approved" | "Rejected" | "Excused" | "Unexcused"
+      AttendanceLogMethod: "RFID" | "Manual" | "WebApp"
     }
     CompositeTypes: {
       [_ in never]: never

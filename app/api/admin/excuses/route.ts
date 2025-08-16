@@ -75,8 +75,9 @@ export async function GET(request: Request) {
 }
 
 // PATCH /api/admin/excuses/:requestId
-export async function PATCH(request: Request, { params }: { params: { requestId: string } }) {
-  const requestId = parseInt(params.requestId)
+export async function PATCH(request: Request, { params }: { params: Promise<{ requestId: string }> }) {
+  const { requestId } = await params
+  const requestIdNum = parseInt(requestId)
   const requestBody = await request.json()
   const status = requestBody.status as ExcuseStatus
   const adminNotes = requestBody.adminNotes as string | undefined
@@ -116,7 +117,7 @@ export async function PATCH(request: Request, { params }: { params: { requestId:
         email
       )
     `)
-    .eq("request_id", requestId)
+    .eq("request_id", requestIdNum)
     .single()
 
   if (excuseRequestError || !excuseRequest) {
@@ -135,7 +136,7 @@ export async function PATCH(request: Request, { params }: { params: { requestId:
       admin_notes: adminNotes,
       admin_id_fk: session.user.id,
     })
-    .eq("request_id", requestId)
+    .eq("request_id", requestIdNum)
     .select()
     .single()
 

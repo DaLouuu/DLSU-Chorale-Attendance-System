@@ -346,7 +346,6 @@ export default function AttendanceOverviewPage() {
             </DialogHeader>
             <ExcuseDetailView 
               excuse={selectedExcuse} 
-              isOpen={isDetailOpen}
               onClose={() => setIsDetailOpen(false)}
               onApprove={(id) => {
                 // Handle approve logic

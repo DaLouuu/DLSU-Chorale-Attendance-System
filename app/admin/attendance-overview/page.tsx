@@ -258,9 +258,9 @@ export default function AttendanceOverviewPage() {
               <h1 className="text-2xl font-bold text-[#136c37] md:text-3xl">Group Attendance</h1>
 
               <Button asChild className="bg-[#136c37] hover:bg-[#136c37]/90 text-white">
-                <Link href="/admin/excuse-approval">
+                <Link href="/manage-paalams">
                   <ClipboardCheck className="mr-2 h-4 w-4" />
-                  Excuse Approval
+                  Manage Paalams
                 </Link>
               </Button>
             </div>

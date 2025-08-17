@@ -111,24 +111,24 @@ export default function ProfilePage() {
       console.log("[ProfilePage] Fetching profile...")
       try {
         const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser()
 
-        if (sessionError || !session) {
-          console.error("[ProfilePage] No active session", sessionError)
-          toast.error("No active session. Please login.")
+        if (userError || !user) {
+          console.error("[ProfilePage] No active user", userError)
+          toast.error("No active user. Please login.")
           setLoading(false)
           return
         }
-        console.log("[ProfilePage] Session found for user:", session.user.id)
+        console.log("[ProfilePage] User found:", user.id)
 
         // First, try a simple query to test RLS access
         console.log("[ProfilePage] Testing basic RLS access...")
         const { data: testData, error: testError } = await supabase
           .from("profiles")
           .select("id, role")
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .single()
         
         console.log("[ProfilePage] Test query result:", testData, "error:", testError)
@@ -167,7 +167,7 @@ export default function ProfilePage() {
             contact_number,
             sechead_type
           `)
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .single()
 
         console.log("[ProfilePage] Raw query result - data:", accountData, "error:", accountError)

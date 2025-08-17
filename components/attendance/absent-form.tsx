@@ -35,11 +35,11 @@ export function AbsentForm() {
 
     try {
       const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-      if (sessionError || !session) {
+      if (userError || !user) {
         toast({
           title: "Authentication Error",
           description: "You must be logged in to submit an excuse. Please login again.",
@@ -52,7 +52,7 @@ export function AbsentForm() {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single()
 
       if (profileError || !profileData) {

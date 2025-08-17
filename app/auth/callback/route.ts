@@ -16,22 +16,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectTo, request.url))
     }
 
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (sessionError) {
-      console.error("[Callback] Error getting session:", sessionError)
-      redirectTo = "/login?error=session_failed_callback"
+    if (userError) {
+      console.error("[Callback] Error getting user:", userError)
+      redirectTo = "/login?error=user_failed_callback"
       return NextResponse.redirect(new URL(redirectTo, request.url))
     }
 
-    if (session && session.user && session.user.email) {
-      console.log("[Callback] Session retrieved for email:", session.user.email)
+    if (user && user.email) {
+      console.log("[Callback] User retrieved for email:", user.email)
       
       // Check if user exists in Profiles table
       const { data: existingProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single()
         
       if (profileError && profileError.code !== 'PGRST116') {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (existingProfile) {
-        console.log("[Callback] Profile exists for user:", session.user.id, "Role:", existingProfile.role)
+        console.log("[Callback] Profile exists for user:", user.id, "Role:", existingProfile.role)
         // Profile exists, redirect to appropriate dashboard
         if (existingProfile.role === "Executive Board") {
           redirectTo = "/admin/attendance-overview"

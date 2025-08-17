@@ -18,17 +18,17 @@ export default function SetupPage() {
       console.log("[SetupPage] Starting setupUserProfile...")
       try {
         console.log("[SetupPage] Attempting to get session...")
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        if (sessionError) {
-          console.error("[SetupPage] Session error:", sessionError)
-          throw new Error(`Session error: ${sessionError.message}`)
+        if (userError) {
+          console.error("[SetupPage] User error:", userError)
+          throw new Error(`User error: ${userError.message}`)
         }
-        if (!session) {
-          console.warn("[SetupPage] No active session found.")
-          throw new Error("No active session found")
+        if (!user) {
+          console.warn("[SetupPage] No active user found.")
+          throw new Error("No active user found")
         }
-        console.log("[SetupPage] Session retrieved:", session)
+        console.log("[SetupPage] User retrieved:", user)
 
         console.log("[SetupPage] Attempting to get registrationData from localStorage...")
         const registrationDataStr = localStorage.getItem("registrationData")
@@ -46,11 +46,11 @@ export default function SetupPage() {
           throw new Error("Failed to parse registration data")
         }
 
-        console.log(`[SetupPage] Attempting to query 'directory' for email: ${session.user.email}`)
+        console.log(`[SetupPage] Attempting to query 'directory' for email: ${user.email}`)
         const { data: directoryData, error: directoryError } = await supabase
           .from("directory")
           .select("id, email, school_id")
-          .eq("email", session.user.email!)
+          .eq("email", user.email!)
           .single()
 
         if (directoryError) {
@@ -63,18 +63,18 @@ export default function SetupPage() {
         console.log("[SetupPage] Directory query result - data:", directoryData, "error:", directoryError)
 
         if (!directoryData) { // This implies directoryError was PGRST116 or it was null and no data
-          console.warn("[SetupPage] Email not found in directory. User email:" , session.user.email)
+          console.warn("[SetupPage] Email not found in directory. User email:" , user.email)
           toast.error("Your email is not found in the official directory. Please contact an administrator.")
           router.push("/unauthorized")
           return
         }
         console.log("[SetupPage] Directory data found:", directoryData)
 
-        console.log(`[SetupPage] Attempting to query 'profiles' for id: ${session.user.id}`)
+        console.log(`[SetupPage] Attempting to query 'profiles' for id: ${user.id}`)
         const { data: existingProfile, error: profileQueryError } = await supabase
           .from("profiles")
           .select("role, id")
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .single()
 
         if (profileQueryError && profileQueryError.code !== 'PGRST116') {
@@ -91,8 +91,8 @@ export default function SetupPage() {
             console.log("[SetupPage] Redirecting existing admin to /admin/attendance-overview")
             router.push("/admin/attendance-overview")
           } else {
-            console.log("[SetupPage] Redirecting existing member to /attendance-form")
-            router.push("/attendance-form")
+                    console.log("[SetupPage] Redirecting existing member to /manage-paalams")
+        router.push("/manage-paalams")
           }
           return;
         }
@@ -100,12 +100,12 @@ export default function SetupPage() {
 
         const profileToInsert = {
           school_id: directoryData.school_id,
-          id: session.user.id,
-          first_name: session.user.user_metadata.first_name || session.user.user_metadata.name?.split(' ')[0] || "User",
-          last_name: session.user.user_metadata.last_name || session.user.user_metadata.name?.split(' ').slice(1).join(' ') || "",
-          middle_name: session.user.user_metadata.middle_name || null,
-          nickname: session.user.user_metadata.nickname || null,
-          email: session.user.email,
+          id: user.id,
+          first_name: user.user_metadata.first_name || user.user_metadata.name?.split(' ')[0] || "User",
+          last_name: user.user_metadata.last_name || user.user_metadata.name?.split(' ').slice(1).join(' ') || "",
+          middle_name: user.user_metadata.middle_name || null,
+          nickname: user.user_metadata.nickname || null,
+          email: user.email,
           role: registrationData.adminRole || "Not Applicable",
           committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
@@ -133,8 +133,8 @@ export default function SetupPage() {
           console.log("[SetupPage] Redirecting new admin to /admin/attendance-overview")
           router.push("/admin/attendance-overview")
         } else {
-          console.log("[SetupPage] Redirecting new member to /attendance-form")
-          router.push("/attendance-form")
+                  console.log("[SetupPage] Redirecting new member to /manage-paalams")
+        router.push("/manage-paalams")
         }
       } catch (error) {
         console.error("[SetupPage] Error in setupUserProfile catch block:", error)

@@ -12,18 +12,18 @@ export async function GET(request: Request) {
   const supabase = await createClient()
 
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (sessionError || !session) {
-    return NextResponse.json({ error: "Unauthorized - no session" }, { status: 401 })
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized - no user" }, { status: 401 })
   }
 
   const { data: adminData, error: adminError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single()
 
   if (adminError || !adminData || adminData.role !== "Executive Board") {
@@ -89,18 +89,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   const supabase = await createClient()
 
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (sessionError || !session) {
-    return NextResponse.json({ error: "Unauthorized - no session" }, { status: 401 })
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized - no user" }, { status: 401 })
   }
 
   const { data: adminData, error: adminError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single()
 
   if (adminError || !adminData || adminData.role !== "Executive Board") {
@@ -134,7 +134,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
     .update({
       status: status,
       admin_notes: adminNotes,
-      admin_id_fk: session.user.id,
+      admin_id_fk: user.id,
     })
     .eq("request_id", requestIdNum)
     .select()

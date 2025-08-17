@@ -53,9 +53,6 @@ export default function SettingsPage() {
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
-            {/* Dashboard Navigation */}
-            {/* Removed DashboardNav */}
-
             <h1 className="text-2xl font-bold text-primary md:text-3xl mb-6">Settings</h1>
 
             <div className="grid gap-6">

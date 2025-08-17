@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
+import { useTheme } from "@/components/theme-provider"
 
 // Attendance status types
 type UserRole = "member" | "admin" | "unknown"
@@ -26,6 +27,8 @@ export default function DashboardPage() {
   const [loadingUserRole, setLoadingUserRole] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const { theme } = useTheme()
+  const isDarkMode = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   // Fetch user role
   useEffect(() => {
@@ -236,7 +239,11 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer (Simplified) */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+      <footer className={`mt-auto ${
+        isDarkMode 
+          ? 'bg-[#09331f] shadow-lg' 
+          : 'bg-white border-t border-gray-200'
+      }`}>
         <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
           &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
         </div>

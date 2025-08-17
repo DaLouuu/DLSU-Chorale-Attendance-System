@@ -17,7 +17,7 @@ export default function ContactPage() {
             <h1 className="text-4xl font-bold tracking-tight mb-6">Contact Us</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Get in touch with the DLSU Chorale. Whether you have questions about performances, 
-              want to join our group, or need information about upcoming events, we're here to help.
+              want to join our group, or need information about upcoming events, we&apos;re here to help.
             </p>
           </div>
         </main>

@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -362,21 +362,14 @@ export default function ProfilePage() {
     setEditedProfile(prev => ({ ...prev, [name]: processedValue }));
   };
 
-  const formatValue = (value: string | null | undefined) => {
-    if (!value) return "N/A"
-    return value
-      .replace(/[-_]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  }
+
 
   const formatContactNumber = (contactNumber: number | null): string => {
     if (!contactNumber) return "N/A"
     const numberStr = contactNumber.toString()
     
     // Remove any leading zeros or country code indicators
-    let cleanNumber = numberStr
+    const cleanNumber = numberStr
     
     // If it's 11 digits and starts with 9 (Philippine mobile format)
     if (cleanNumber.length === 11 && cleanNumber.startsWith('9')) {

@@ -10,6 +10,8 @@ export type ExcuseType = Database['public']['Enums']['ExcuseType']
 export interface ExcuseRequestWithProfile extends ExcuseRequest {
   profiles: {
     full_name: string | null
+    first_name: string | null
+    last_name: string | null
     email: string | null
     section: string | null
     committee: string | null

@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "@/components/theme-provider"
-import { Home, ClipboardCheck, FileText, User, Settings, LogOut, ChevronDown } from "lucide-react"
+import { Home, ClipboardCheck, FileText, User, Settings, ChevronDown } from "lucide-react"
 import { signOutUser } from "@/lib/auth-actions"
 import { useUserRole } from "@/hooks/use-user-role"
 

@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns"
-import { ChevronLeft, ChevronRight, ClipboardCheck, Clock, UserCheck, UserX, AlertCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, ClipboardCheck, Clock, UserCheck, UserX, AlertCircle, List, Grid3X3, ChevronDown } from "lucide-react"
 import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
 // Mock attendance data for members
@@ -131,6 +132,12 @@ export default function AttendanceOverviewPage() {
   )
   const [activeVoice, setActiveVoice] = useState("all")
   const [activeTab, setActiveTab] = useState("present")
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
+  const [voiceDropdownOpen, setVoiceDropdownOpen] = useState(false)
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const [viewDropdownOpen, setViewDropdownOpen] = useState(false)
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false)
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false)
 
   // Update week when navigating
   const navigateWeek = (direction: 'prev' | 'next') => {
@@ -159,11 +166,33 @@ export default function AttendanceOverviewPage() {
     }
   }
 
+  // Sort members by voice section (SATB order) then by section number, then by surname
+  const sortMembers = (members: typeof mockAttendanceData) => {
+    const voiceOrder = { soprano: 1, alto: 2, tenor: 3, bass: 4 }
+    
+    return members.sort((a, b) => {
+      // First sort by voice section (SATB order)
+      const voiceDiff = voiceOrder[a.voiceSection as keyof typeof voiceOrder] - voiceOrder[b.voiceSection as keyof typeof voiceOrder]
+      if (voiceDiff !== 0) return voiceDiff
+      
+      // Then sort by section number (1 comes before 2)
+      const aSectionNum = parseInt(a.voiceNumber) || 0
+      const bSectionNum = parseInt(b.voiceNumber) || 0
+      if (aSectionNum !== bSectionNum) return aSectionNum - bSectionNum
+      
+      // Finally sort by surname (last name)
+      const aSurname = a.name.split(' ').pop() || ''
+      const bSurname = b.name.split(' ').pop() || ''
+      return aSurname.localeCompare(bSurname)
+    })
+  }
+
   // Get attendance data for the selected date and filter by voice section
   const getFilteredAttendance = () => {
-    return mockAttendanceData.filter(
+    const filtered = mockAttendanceData.filter(
       (member) => activeVoice === "all" || member.voiceSection === activeVoice
     )
+    return sortMembers(filtered)
   }
 
   // Get attendance data by status
@@ -171,20 +200,20 @@ export default function AttendanceOverviewPage() {
     const filtered = getFilteredAttendance()
     
     if (status === "present") {
-      return filtered.filter(member => member.status === "present")
+      return sortMembers(filtered.filter(member => member.status === "present"))
     } else if (status === "excused") {
-      return filtered.filter(member => member.status === "absent" && member.attendanceType === "excused")
+      return sortMembers(filtered.filter(member => member.status === "absent" && member.attendanceType === "excused"))
     } else if (status === "unexcused") {
-      return filtered.filter(member => 
+      return sortMembers(filtered.filter(member => 
         (member.status === "absent" && member.attendanceType === "unexcused") ||
         member.attendanceType === "unexcused-late"
-      )
+      ))
     }
     return []
   }
 
   // Count attendance for each day in the week
-  const getAttendanceCountForDay = (day: Date) => {
+  const getAttendanceCountForDay = () => {
     // For demo purposes, return a random count
     return Math.floor(Math.random() * 15) + 5
   }
@@ -248,24 +277,105 @@ export default function AttendanceOverviewPage() {
                     <div className="grid grid-cols-2 gap-3 mb-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#136c37] focus:border-transparent">
-                          <option value="2025">2025</option>
-                          <option value="2024">2024</option>
-                          <option value="2023">2023</option>
-                        </select>
+                        <DropdownMenu open={yearDropdownOpen} onOpenChange={setYearDropdownOpen}>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={`w-full justify-between bg-white border-gray-300 hover:bg-gray-50 ${
+                                yearDropdownOpen ? "border-[#136c37] ring-2 ring-[#136c37] ring-opacity-20" : ""
+                              }`}
+                            >
+                              <span>2025</span>
+                              <ChevronDown className="w-4 h-4 ml-2" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-full min-w-[120px]">
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              2025
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              2024
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              2023
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#136c37] focus:border-transparent">
-                          <option value="8">August</option>
-                          <option value="7">July</option>
-                          <option value="6">June</option>
-                          <option value="5">May</option>
-                          <option value="4">April</option>
-                          <option value="3">March</option>
-                          <option value="2">February</option>
-                          <option value="1">January</option>
-                        </select>
+                        <DropdownMenu open={monthDropdownOpen} onOpenChange={setMonthDropdownOpen}>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={`w-full justify-between bg-white border-gray-300 hover:bg-gray-50 ${
+                                monthDropdownOpen ? "border-[#136c37] ring-2 ring-[#136c37] ring-opacity-20" : ""
+                              }`}
+                            >
+                              <span>August</span>
+                              <ChevronDown className="w-4 h-4 ml-2" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-full min-w-[120px]">
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              August
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              July
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              June
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              May
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              April
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              March
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              February
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {}}
+                              className="cursor-pointer"
+                            >
+                              January
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
@@ -362,7 +472,7 @@ export default function AttendanceOverviewPage() {
                       {currentWeek.map((day) => {
                         const isSelected = isSameDay(day, selectedDate)
                         const isToday = isSameDay(day, today)
-                        const attendanceCount = getAttendanceCountForDay(day)
+                        const attendanceCount = getAttendanceCountForDay()
 
                         return (
                           <Button
@@ -403,93 +513,243 @@ export default function AttendanceOverviewPage() {
 
                   {/* Voice Filter */}
                   <div className="px-4 pt-4">
-                    <Tabs defaultValue="all" value={activeVoice} onValueChange={setActiveVoice}>
-                      <TabsList className="grid grid-cols-5 w-full bg-gray-100 p-1 rounded-lg">
-                        <TabsTrigger
-                          value="all"
-                          className="data-[state=active]:bg-[#136c37] data-[state=active]:text-white"
-                        >
-                          All
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="soprano"
-                          className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
-                        >
-                          Soprano
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="alto"
-                          className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
-                        >
-                          Alto
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="tenor"
-                          className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
-                        >
-                          Tenor
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="bass"
-                          className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
-                        >
-                          Bass
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    {/* Desktop: Tabs */}
+                    <div className="hidden sm:block">
+                      <Tabs defaultValue="all" value={activeVoice} onValueChange={setActiveVoice}>
+                        <TabsList className="grid grid-cols-5 w-full bg-gray-100 p-1 rounded-lg">
+                          <TabsTrigger
+                            value="all"
+                            className="data-[state=active]:bg-[#136c37] data-[state=active]:text-white"
+                          >
+                            All
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="soprano"
+                            className="data-[state=active]:bg-pink-500 data-[state=active]:text-white"
+                          >
+                            Soprano
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="alto"
+                            className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                          >
+                            Alto
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="tenor"
+                            className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+                          >
+                            Tenor
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="bass"
+                            className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+                          >
+                            Bass
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+
+                    {/* Mobile: Dropdown */}
+                    <div className="sm:hidden">
+                      <DropdownMenu open={voiceDropdownOpen} onOpenChange={setVoiceDropdownOpen}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={`w-full justify-between bg-white border-gray-300 hover:bg-gray-50 ${
+                              voiceDropdownOpen ? "border-[#136c37] ring-2 ring-[#136c37] ring-opacity-20" : ""
+                            }`}
+                          >
+                            <span className="capitalize">
+                              {activeVoice === "all" ? "All Voice Sections" : `${activeVoice} ${activeVoice !== "all" ? "Section" : ""}`}
+                            </span>
+                            <ChevronDown className="w-4 h-4 ml-2" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-full min-w-[200px]">
+                          <DropdownMenuItem
+                            onClick={() => setActiveVoice("all")}
+                            className="cursor-pointer"
+                          >
+                            All Voice Sections
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setActiveVoice("soprano")}
+                            className="cursor-pointer"
+                          >
+                            Soprano Section
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setActiveVoice("alto")}
+                            className="cursor-pointer"
+                          >
+                            Alto Section
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setActiveVoice("tenor")}
+                            className="cursor-pointer"
+                          >
+                            Tenor Section
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setActiveVoice("bass")}
+                            className="cursor-pointer"
+                          >
+                            Bass Section
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
-                  {/* Attendance Status Tabs */}
+                  {/* Attendance Status Tabs and View Toggle */}
                   <div className="px-4 pt-4">
-                    <Tabs defaultValue="present" value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid grid-cols-3 w-full bg-gray-100 p-1 rounded-lg">
-                        <TabsTrigger
-                          value="present"
-                          className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Present
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="excused"
-                          className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                        >
-                          <AlertCircle className="w-4 h-4 mr-2" />
-                          Excused
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="unexcused"
-                          className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
-                        >
-                          <UserX className="w-4 h-4 mr-2" />
-                          Unexcused
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <div className="flex items-center gap-4 mb-4">
+                      {/* Attendance Status Tabs - Takes remaining width */}
+                      <div className="flex-1">
+                        {/* Desktop: Tabs */}
+                        <div className="hidden sm:block">
+                          <Tabs defaultValue="present" value={activeTab} onValueChange={setActiveTab}>
+                            <TabsList className="grid grid-cols-3 w-full bg-gray-100 p-1 rounded-lg">
+                              <TabsTrigger
+                                value="present"
+                                className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                              >
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Present
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="excused"
+                                className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                              >
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Excused
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="unexcused"
+                                className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                              >
+                                <UserX className="w-4 h-4 mr-2" />
+                                Unexcused
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                        </div>
+
+                        {/* Mobile: Dropdown */}
+                        <div className="sm:hidden">
+                          <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={`w-full justify-between bg-white border-gray-300 hover:bg-gray-50 ${
+                                  statusDropdownOpen ? "border-[#136c37] ring-2 ring-[#136c37] ring-opacity-20" : ""
+                                }`}
+                              >
+                                <span className="flex items-center">
+                                  {activeTab === "present" && <UserCheck className="w-4 h-4 mr-2" />}
+                                  {activeTab === "excused" && <AlertCircle className="w-4 h-4 mr-2" />}
+                                  {activeTab === "unexcused" && <UserX className="w-4 h-4 mr-2" />}
+                                  {activeTab === "present" ? "Present" : activeTab === "excused" ? "Excused" : "Unexcused"}
+                                </span>
+                                <ChevronDown className="w-4 h-4 ml-2" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-full min-w-[200px]">
+                              <DropdownMenuItem
+                                onClick={() => setActiveTab("present")}
+                                className="cursor-pointer"
+                              >
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Present
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setActiveTab("excused")}
+                                className="cursor-pointer"
+                              >
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Excused
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setActiveTab("unexcused")}
+                                className="cursor-pointer"
+                              >
+                                <UserX className="w-4 h-4 mr-2" />
+                                Unexcused
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      {/* View Toggle - Fixed width on the right */}
+                      <DropdownMenu open={viewDropdownOpen} onOpenChange={setViewDropdownOpen}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-8 px-3 py-1 bg-white border-gray-300 hover:bg-gray-50 ${
+                              viewDropdownOpen ? "border-[#136c37] ring-2 ring-[#136c37] ring-opacity-20" : ""
+                            }`}
+                          >
+                            {viewMode === "cards" ? (
+                              <Grid3X3 className="w-4 h-4" />
+                            ) : (
+                              <List className="w-4 h-4" />
+                            )}
+                            <ChevronDown className="w-3 h-3 ml-2 text-gray-500" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => setViewMode("cards")}
+                            className="cursor-pointer"
+                            title="View attendance data as compact cards in a grid layout"
+                          >
+                            <Grid3X3 className="w-4 h-4 mr-2" />
+                            View as cards
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setViewMode("list")}
+                            className="cursor-pointer"
+                            title="View attendance data as a structured table with columns"
+                          >
+                            <List className="w-4 h-4 mr-2" />
+                            View as a list
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   {/* Attendance List */}
                   <CardContent className="pt-4">
                     {getAttendanceByStatus(activeTab).length > 0 ? (
-                      <div className="space-y-3">
-                        {getAttendanceByStatus(activeTab).map((member) => {
-                          const statusBadge = getStatusBadge(member.attendanceType)
-                          return (
-                            <div
-                              key={member.id}
-                              className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src="/images/profile-1.jpg" alt={member.name} />
-                                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                      viewMode === "cards" ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {getAttendanceByStatus(activeTab).map((member) => {
+                            const statusBadge = getStatusBadge(member.attendanceType)
+                            return (
+                              <div
+                                key={member.id}
+                                className="flex flex-col p-4 bg-white rounded-lg border border-gray-200 transition-shadow"
+                              >
+                                <div className="flex items-center gap-3 mb-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src="/images/profile-1.jpg" alt={member.name} />
+                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
 
-                                <div>
-                                  <h3 className="font-medium text-gray-900">{member.name}</h3>
-                                  <div className="text-sm text-gray-500 capitalize">
-                                    {member.voiceSection} {member.voiceNumber}
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-gray-900 text-sm truncate">{member.name}</h3>
+                                    <div className="text-xs text-gray-500 capitalize">
+                                      {member.voiceSection} {member.voiceNumber}
+                                    </div>
                                   </div>
+                                </div>
+
+                                <div className="space-y-2">
                                   {member.time && (
                                     <div className="text-xs text-gray-400 flex items-center gap-1">
                                       <Clock className="w-3 h-3" />
@@ -502,23 +762,113 @@ export default function AttendanceOverviewPage() {
                                       ETD: {member.etd}
                                     </div>
                                   )}
+                                  {member.reason && (
+                                    <div className="text-xs text-gray-600 line-clamp-2">
+                                      {member.reason}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="mt-3 pt-2 border-t border-gray-100">
+                                  <Badge className={`${statusBadge.color} text-xs`}>
+                                    {statusBadge.text}
+                                  </Badge>
                                 </div>
                               </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          {/* Desktop: Full width table */}
+                          <div className="hidden lg:block">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200">Name</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200">Voice</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200">Arrival</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200">ETD</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200">Reason/Notes</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {getAttendanceByStatus(activeTab).map((member) => {
+                                  const statusBadge = getStatusBadge(member.attendanceType)
+                                  return (
+                                    <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200">{member.name}</td>
+                                      <td className="px-4 py-3 text-xs text-gray-600 capitalize border-r border-gray-200">
+                                        {member.voiceSection} {member.voiceNumber}
+                                      </td>
+                                      <td className="px-4 py-3 text-xs text-gray-500 border-r border-gray-200">
+                                        {member.time || "-"}
+                                      </td>
+                                      <td className="px-4 py-3 text-xs text-gray-500 border-r border-gray-200">
+                                        {member.etd || "-"}
+                                      </td>
+                                      <td className="px-4 py-3 text-xs text-gray-600 border-r border-gray-200 max-w-[150px] truncate">
+                                        {member.reason || member.notes || "-"}
+                                      </td>
+                                      <td className="px-4 py-3 text-xs">
+                                        <Badge className={`${statusBadge.color} text-xs px-2 py-1`}>
+                                          {statusBadge.text}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
 
-                              <div className="flex items-center gap-3">
-                                <Badge className={statusBadge.color}>
-                                  {statusBadge.text}
-                                </Badge>
-                                {member.reason && (
-                                  <span className="text-sm text-gray-600 max-w-xs truncate">
-                                    {member.reason}
-                                  </span>
-                                )}
-                              </div>
+                          {/* Mobile/Tablet: Horizontally scrollable table */}
+                          <div className="lg:hidden">
+                            <div className="overflow-x-auto">
+                              <table className="min-w-[800px]">
+                                <thead>
+                                  <tr className="bg-gray-50 border-b border-gray-200">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200 whitespace-nowrap">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200 whitespace-nowrap">Voice</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200 whitespace-nowrap">Arrival</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200 whitespace-nowrap">ETD</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 border-r border-gray-200 whitespace-nowrap">Reason/Notes</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 whitespace-nowrap">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                  {getAttendanceByStatus(activeTab).map((member) => {
+                                    const statusBadge = getStatusBadge(member.attendanceType)
+                                    return (
+                                      <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 whitespace-nowrap">{member.name}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 capitalize border-r border-gray-200 whitespace-nowrap">
+                                          {member.voiceSection} {member.voiceNumber}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-gray-500 border-r border-gray-200 whitespace-nowrap">
+                                          {member.time || "-"}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-gray-500 border-r border-gray-200 whitespace-nowrap">
+                                          {member.etd || "-"}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 border-r border-gray-200 max-w-[150px] truncate whitespace-nowrap">
+                                          {member.reason || member.notes || "-"}
+                                        </td>
+                                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                                          <Badge className={`${statusBadge.color} text-xs px-2 py-1`}>
+                                            {statusBadge.text}
+                                          </Badge>
+                                        </td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
                             </div>
-                          )
-                        })}
-                      </div>
+                          </div>
+                        </div>
+                      )
                     ) : (
                       <div className="py-8 text-center text-gray-500">
                         <p>No {activeTab} members for this date.</p>

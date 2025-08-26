@@ -163,7 +163,25 @@ export async function createExcuseRequest(
   request: Database["public"]["Tables"]["excuse_requests"]["Insert"],
 ) {
   const supabase = await createClient();
-  return supabase.from("excuse_requests").insert([request]);
+  try {
+    console.log("createExcuseRequest: Attempting to insert request:", request);
+    const { data, error, status, statusText } = await supabase
+      .from("excuse_requests")
+      .insert([request]);
+    if (error) {
+      console.error("createExcuseRequest error:", error, "Status:", status, statusText);
+      return { error };
+    }
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      console.error("createExcuseRequest: No data returned after insert.", data, "Status:", status, statusText);
+      return { error: new Error("No data returned after insert.") };
+    }
+    console.log("createExcuseRequest: Inserted data:", data);
+    return { data };
+  } catch (err) {
+    console.error("createExcuseRequest exception:", err);
+    return { error: err };
+  }
 }
 
 export async function updateExcuseRequest(

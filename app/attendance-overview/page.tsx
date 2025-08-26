@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
 import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Button } from "@/components/ui/button"
@@ -9,47 +9,91 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
 export default function AttendanceOverviewPage() {
-  const today = new Date()
-  const [currentMonth, setCurrentMonth] = useState(today)
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today);
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Generate days for the current month
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentMonth),
     end: endOfMonth(currentMonth),
-  })
+  });
 
-  // Mock attendance data
-  const attendanceData = [
-    { date: new Date(2025, 4, 3), status: "present" },
-    { date: new Date(2025, 4, 7), status: "absent" },
-    { date: new Date(2025, 4, 10), status: "late" },
-    { date: new Date(2025, 4, 15), status: "present" },
-    { date: new Date(2025, 4, 21), status: "present" },
-    { date: new Date(2025, 4, 28), status: "absent" },
-  ]
+  // Fetch attendance logs for the current user
+  useEffect(() => {
+    async function fetchAttendance() {
+      setLoading(true);
+      const supabase = (await import("@/utils/supabase/client")).createClient();
+      const { toast } = await import("@/hooks/use-toast");
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        setAttendanceData([]);
+        setLoading(false);
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to view attendance logs. Please login again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Get profile ID
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", session.user.id)
+        .single();
+      if (profileError || !profileData) {
+        setAttendanceData([]);
+        setLoading(false);
+        toast({
+          title: "Profile Error",
+          description: "Could not find your profile information. Please ensure your account is fully set up or contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Get attendance logs
+      const logs = await supabase.
+        from("attendance_logs")
+        .select("*")
+        .eq("account_id_fk", profileData.id)
+        .order("reh_date", { ascending: false });
+      if (logs.error || !logs.data) {
+        setAttendanceData([]);
+        toast({
+          title: "Database Error",
+          description: `Failed to retrieve attendance logs. ${logs.error?.message || "Unknown error."}`,
+          variant: "destructive",
+        });
+      } else {
+        setAttendanceData(logs.data);
+      }
+      setLoading(false);
+    }
+    fetchAttendance();
+  }, [currentMonth]);
 
   // Get status for a specific day
   const getAttendanceStatus = (day: Date) => {
-    const record = attendanceData.find((item) => isSameDay(item.date, day))
-    return record ? record.status : null
-  }
+    const record = attendanceData.find((item) => {
+      // Assuming attendance_logs has a reh_date or similar field
+      return isSameDay(new Date(item.reh_date), day);
+    });
+    return record ? (record.log_status === "Late" ? "late" : record.log_status === "On-time" ? "present" : "absent") : null;
+  };
 
   // Navigate to previous/next month
   const navigateMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentMonth(prev => {
-        const newDate = new Date(prev)
-        newDate.setMonth(newDate.getMonth() - 1)
-        return newDate
-      })
-    } else {
-      setCurrentMonth(prev => {
-        const newDate = new Date(prev)
-        newDate.setMonth(newDate.getMonth() + 1)
-        return newDate
-      })
-    }
-  }
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">

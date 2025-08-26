@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns"
 import { ChevronLeft, ChevronRight, ClipboardCheck, Clock, UserCheck, UserX, AlertCircle, List, Grid3X3, ChevronDown } from "lucide-react"
 import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
@@ -12,116 +12,99 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-// Mock attendance data for members
-const mockAttendanceData = [
-  // Present Members (On-time, Late, Stepping Out, Left Early)
-  {
-    id: "1",
-    name: "Maria Santos",
-    voiceSection: "soprano",
-    voiceNumber: "1",
-    status: "present",
-    attendanceType: "on-time",
-    time: "6:00 PM",
-    notes: ""
-  },
-  {
-    id: "2",
-    name: "Juan Dela Cruz",
-    voiceSection: "tenor",
-    voiceNumber: "2",
-    status: "present",
-    attendanceType: "late",
-    time: "6:15 PM",
-    notes: "Traffic delay"
-  },
-  {
-    id: "3",
-    name: "Ana Reyes",
-    voiceSection: "alto",
-    voiceNumber: "1",
-    status: "present",
-    attendanceType: "stepping-out",
-    time: "6:00 PM",
-    notes: "Will return by 7:00 PM"
-  },
-  {
-    id: "4",
-    name: "Carlos Mendoza",
-    voiceSection: "bass",
-    voiceNumber: "1",
-    status: "present",
-    attendanceType: "left-early",
-    time: "6:00 PM",
-    etd: "7:30 PM",
-    notes: "Emergency call"
-  },
-  {
-    id: "5",
-    name: "Sofia Garcia",
-    voiceSection: "soprano",
-    voiceNumber: "2",
-    status: "present",
-    attendanceType: "on-time",
-    time: "6:00 PM",
-    notes: ""
-  },
-  // Excused Absences
-  {
-    id: "6",
-    name: "Miguel Torres",
-    voiceSection: "tenor",
-    voiceNumber: "1",
-    status: "absent",
-    attendanceType: "excused",
-    reason: "Medical appointment",
-    notes: "Doctor's note provided"
-  },
-  {
-    id: "7",
-    name: "Isabella Cruz",
-    voiceSection: "alto",
-    voiceNumber: "2",
-    status: "absent",
-    attendanceType: "excused",
-    reason: "Family emergency",
-    notes: "Approved by conductor"
-  },
-  // Unexcused (Late, Absence, Step Out, Leave Early)
-  {
-    id: "8",
-    name: "Roberto Silva",
-    voiceSection: "bass",
-    voiceNumber: "2",
-    status: "absent",
-    attendanceType: "unexcused",
-    reason: "No reason provided",
-    notes: ""
-  },
-  {
-    id: "9",
-    name: "Carmen Lopez",
-    voiceSection: "soprano",
-    voiceNumber: "3",
-    status: "present",
-    attendanceType: "unexcused-late",
-    time: "6:30 PM",
-    notes: "No valid excuse"
-  },
-  {
-    id: "10",
-    name: "Luis Rodriguez",
-    voiceSection: "tenor",
-    voiceNumber: "3",
-    status: "present",
-    attendanceType: "left-early",
-    time: "6:00 PM",
-    etd: "8:00 PM",
-    notes: "Class conflict"
-  }
-]
-
 export default function AttendanceOverviewPage() {
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Fetch attendance and excuse data from Supabase
+  useEffect(() => {
+    async function fetchAttendanceData() {
+      setLoading(true);
+      const supabase = (await import("@/utils/supabase/client")).createClient();
+
+      // Fetch attendance logs with profile info
+      const { data: logs, error: logsError } = await supabase
+        .from("attendance_logs")
+        .select("*, profiles(first_name, last_name, section)");
+
+      // Fetch excuse requests with profile info
+      const { data: excuses, error: excusesError } = await supabase
+        .from("excuse_requests")
+        .select("*, profiles(first_name, last_name, section)");
+
+      if (logsError || excusesError) {
+        setAttendanceData([]);
+        setErrorMessage(
+          logsError?.message || excusesError?.message || "Failed to retrieve attendance data from the database."
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Present: attendance_logs with log_status On-time/Late
+      const present = logs
+        .filter(log => log.log_status === "On-time" || log.log_status === "Late")
+        .map(log => ({
+          id: log.account_id_fk,
+          name: `${log.profiles?.first_name || ""} ${log.profiles?.last_name || ""}`.trim(),
+          voiceSection: log.profiles?.section || "",
+          status: "present",
+          attendanceType: log.log_status === "Late" ? "late" : "on-time",
+          time: log.created_at,
+          notes: ""
+        }));
+
+      // Present: excuse_requests with excuse_type "Step Out"
+      const stepOut = excuses
+        .filter(excuse => excuse.excuse_type === "Step Out")
+        .map(excuse => ({
+          id: excuse.account_id_fk,
+          name: `${excuse.profiles?.first_name || ""} ${excuse.profiles?.last_name || ""}`.trim(),
+          voiceSection: excuse.profiles?.section || "",
+          status: "present",
+          attendanceType: "stepping-out",
+          time: excuse.request_time,
+          notes: excuse.excuse_reason || excuse.admin_notes || ""
+        }));
+
+      // Excused absences: excuse_requests with excuse_type "Absence"
+      const excused = excuses
+        .filter(excuse => excuse.excuse_type === "Absence")
+        .map(excuse => ({
+          id: excuse.account_id_fk,
+          name: `${excuse.profiles?.first_name || ""} ${excuse.profiles?.last_name || ""}`.trim(),
+          voiceSection: excuse.profiles?.section || "",
+          status: "absent",
+          attendanceType: "excused",
+          reason: excuse.excuse_reason || excuse.admin_notes || "",
+          notes: excuse.admin_notes || ""
+        }));
+
+      // Unexcused: attendance_logs with no excuse and log time after 18:30
+      const unexcused = logs
+        .filter(log => {
+          // Check if member has no excuse for this date
+          const hasExcuse = excuses.some(excuse => excuse.account_id_fk === log.account_id_fk && excuse.request_date === log.created_at?.slice(0, 10));
+          // Parse created_at time and check if later than 18:30
+          const logTime = log.created_at ? parseInt(log.created_at.slice(11, 16).replace(":", "")) : 0;
+          return !hasExcuse && logTime > 1830;
+        })
+        .map(log => ({
+          id: log.account_id_fk,
+          name: `${log.profiles?.first_name || ""} ${log.profiles?.last_name || ""}`.trim(),
+          voiceSection: log.profiles?.section || "",
+          status: "absent",
+          attendanceType: "unexcused",
+          reason: "No valid excuse",
+          notes: ""
+        }));
+
+      setAttendanceData([...present, ...stepOut, ...excused, ...unexcused]);
+      setLoading(false);
+    }
+    fetchAttendanceData();
+  }, []);
   const today = new Date()
   const [selectedDate, setSelectedDate] = useState(today)
   const [currentWeek, setCurrentWeek] = useState(
@@ -167,7 +150,7 @@ export default function AttendanceOverviewPage() {
   }
 
   // Sort members by voice section (SATB order) then by section number, then by surname
-  const sortMembers = (members: typeof mockAttendanceData) => {
+  const sortMembers = (members: typeof attendanceData) => {
     const voiceOrder = { soprano: 1, alto: 2, tenor: 3, bass: 4 }
     
     return members.sort((a, b) => {
@@ -189,7 +172,7 @@ export default function AttendanceOverviewPage() {
 
   // Get attendance data for the selected date and filter by voice section
   const getFilteredAttendance = () => {
-    const filtered = mockAttendanceData.filter(
+    const filtered = attendanceData.filter(
       (member) => activeVoice === "all" || member.voiceSection === activeVoice
     )
     return sortMembers(filtered)
@@ -198,24 +181,23 @@ export default function AttendanceOverviewPage() {
   // Get attendance data by status
   const getAttendanceByStatus = (status: string) => {
     const filtered = getFilteredAttendance()
-    
     if (status === "present") {
       return sortMembers(filtered.filter(member => member.status === "present"))
     } else if (status === "excused") {
       return sortMembers(filtered.filter(member => member.status === "absent" && member.attendanceType === "excused"))
     } else if (status === "unexcused") {
-      return sortMembers(filtered.filter(member => 
-        (member.status === "absent" && member.attendanceType === "unexcused") ||
-        member.attendanceType === "unexcused-late"
-      ))
+      return sortMembers(filtered.filter(member => member.status === "absent" && member.attendanceType === "unexcused"))
     }
     return []
   }
 
-  // Count attendance for each day in the week
-  const getAttendanceCountForDay = () => {
-    // For demo purposes, return a random count
-    return Math.floor(Math.random() * 15) + 5
+  // Get actual attendance count for a given day
+  const getAttendanceCountForDay = (day: Date) => {
+    // Only count present members for the given day
+    const dayStr = format(day, "yyyy-MM-dd");
+    return attendanceData.filter(
+      (member) => member.status === "present" && member.time && member.time.slice(0, 10) === dayStr
+    ).length;
   }
 
   // Get status badge color and text
@@ -253,6 +235,12 @@ export default function AttendanceOverviewPage() {
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-7xl">
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-300 text-center font-medium">
+                <span>Supabase Error: </span>{errorMessage}
+              </div>
+            )}
             {/* Page title */}
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-[#136c37] md:text-3xl">Group Attendance</h1>
@@ -381,60 +369,83 @@ export default function AttendanceOverviewPage() {
 
                     {/* Statistics */}
                     <div className="space-y-4">
-                      {/* Average Attendance */}
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-green-800">Average Member Attendance</p>
-                            <p className="text-2xl font-bold text-green-600">87.5%</p>
-                            <p className="text-xs text-green-600">39 out of 45 members</p>
-                          </div>
-                          <div className="bg-green-100 p-2 rounded-full">
-                            <UserCheck className="h-6 w-6 text-green-600" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Average Absence */}
-                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-red-800">Average Member Absence</p>
-                            <p className="text-2xl font-bold text-red-600">12.5%</p>
-                            <p className="text-xs text-red-600">6 out of 45 members</p>
-                          </div>
-                          <div className="bg-red-100 p-2 rounded-full">
-                            <UserX className="h-6 w-6 text-red-600" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section with Most Issues */}
-                      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-amber-800">Section with Most Issues</p>
-                            <p className="text-lg font-bold text-amber-600">Tenor</p>
-                            <p className="text-xs text-amber-600">Unexcused: Late (3), Absence (2)</p>
-                            <p className="text-xs text-amber-600">Total issues: 5</p>
-                          </div>
-                          <div className="bg-amber-100 p-2 rounded-full">
-                            <AlertCircle className="h-6 w-6 text-amber-600" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick Stats */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                          <p className="text-xs font-medium text-blue-800">Total Members</p>
-                          <p className="text-lg font-bold text-blue-600">45</p>
-                        </div>
-                        <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                          <p className="text-xs font-medium text-purple-800">Rehearsals This Month</p>
-                          <p className="text-lg font-bold text-purple-600">12</p>
-                        </div>
-                      </div>
+                      {/* Accurate Average Attendance */}
+                      {(() => {
+                        // Get unique member IDs
+                        const memberIds = Array.from(new Set(attendanceData.map(m => m.id)));
+                        const totalMembers = memberIds.length;
+                        const presentCount = attendanceData.filter(m => m.status === "present").length;
+                        const absentCount = attendanceData.filter(m => m.status === "absent").length;
+                        const avgAttendance = totalMembers > 0 ? ((presentCount / totalMembers) * 100).toFixed(1) : "0";
+                        const avgAbsence = totalMembers > 0 ? ((absentCount / totalMembers) * 100).toFixed(1) : "0";
+                        // Section with most issues (unexcused absences)
+                        const sectionIssues: Record<string, number> = {};
+                        attendanceData.forEach(m => {
+                          if (m.attendanceType === "unexcused") {
+                            sectionIssues[m.voiceSection] = (sectionIssues[m.voiceSection] || 0) + 1;
+                          }
+                        });
+                        const mostIssuesSection = Object.entries(sectionIssues).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+                        const mostIssuesCount = Object.entries(sectionIssues).sort((a, b) => b[1] - a[1])[0]?.[1] || 0;
+                        // Quick stats
+                        // If you have a members table, replace with actual count
+                        const rehearsalsThisMonth = 12; // Placeholder, replace with actual count if available
+                        return (
+                          <>
+                            {/* Average Attendance */}
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-green-800">Average Member Attendance</p>
+                                  <p className="text-2xl font-bold text-green-600">{avgAttendance}%</p>
+                                  <p className="text-xs text-green-600">{presentCount} out of {totalMembers} members</p>
+                                </div>
+                                <div className="bg-green-100 p-2 rounded-full">
+                                  <UserCheck className="h-6 w-6 text-green-600" />
+                                </div>
+                              </div>
+                            </div>
+                            {/* Average Absence */}
+                            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-red-800">Average Member Absence</p>
+                                  <p className="text-2xl font-bold text-red-600">{avgAbsence}%</p>
+                                  <p className="text-xs text-red-600">{absentCount} out of {totalMembers} members</p>
+                                </div>
+                                <div className="bg-red-100 p-2 rounded-full">
+                                  <UserX className="h-6 w-6 text-red-600" />
+                                </div>
+                              </div>
+                            </div>
+                            {/* Section with Most Issues */}
+                            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-amber-800">Section with Most Issues</p>
+                                  <p className="text-lg font-bold text-amber-600">{mostIssuesSection}</p>
+                                  <p className="text-xs text-amber-600">Unexcused Absences: {mostIssuesCount}</p>
+                                  <p className="text-xs text-amber-600">Total issues: {mostIssuesCount}</p>
+                                </div>
+                                <div className="bg-amber-100 p-2 rounded-full">
+                                  <AlertCircle className="h-6 w-6 text-amber-600" />
+                                </div>
+                              </div>
+                            </div>
+                            {/* Quick Stats */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                <p className="text-xs font-medium text-blue-800">Total Members</p>
+                                <p className="text-lg font-bold text-blue-600">{totalMembers}</p>
+                              </div>
+                              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                                <p className="text-xs font-medium text-purple-800">Rehearsals This Month</p>
+                                <p className="text-lg font-bold text-purple-600">{rehearsalsThisMonth}</p>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -472,7 +483,7 @@ export default function AttendanceOverviewPage() {
                       {currentWeek.map((day) => {
                         const isSelected = isSameDay(day, selectedDate)
                         const isToday = isSameDay(day, today)
-                        const attendanceCount = getAttendanceCountForDay()
+                        const attendanceCount = getAttendanceCountForDay(day)
 
                         return (
                           <Button

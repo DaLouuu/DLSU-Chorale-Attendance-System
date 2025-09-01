@@ -105,9 +105,9 @@ export default function AttendanceOverviewPage() {
             {/* Page title and action button */}
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-primary md:text-3xl">My Attendance</h1>
-              <Button asChild className="bg-primary hover:bg-primary/90">
-                <Link href="/attendance-form">Submit Excuse</Link>
-              </Button>
+                              <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link href="/manage-paalams">Submit Excuse</Link>
+                </Button>
             </div>
 
             {/* Month Navigation */}

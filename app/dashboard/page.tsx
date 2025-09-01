@@ -35,24 +35,24 @@ export default function DashboardPage() {
     const fetchUserRole = async () => {
       try {
         setLoadingUserRole(true)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        if (sessionError) {
-          console.error("[DashboardPage] Session error:", sessionError)
+        if (userError) {
+          console.error("[DashboardPage] User error:", userError)
           setUserRole("unknown")
-          router.push("/login?error=session_error_dashboard")
+          router.push("/login?error=user_error_dashboard")
           return
         }
-        if (!session) {
+        if (!user) {
           setUserRole("unknown")
-          router.push("/login?error=no_session_dashboard")
+          router.push("/login?error=no_user_dashboard")
           return
         }
 
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("role")
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .single()
 
         if (profileError) {
@@ -144,11 +144,11 @@ export default function DashboardPage() {
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
                         Ready to mark your attendance for today&apos;s rehearsal?
                     </p>
-                    <Link href="/attendance-form" passHref>
+                                         <Link href="/manage-paalams" passHref>
                         <Button className="w-full bg-[#09331f] hover:bg-[#0a4429] text-white">
                             Go to Attendance Form
                         </Button>
-                    </Link>
+                     </Link>
                 </div>
             )}
 

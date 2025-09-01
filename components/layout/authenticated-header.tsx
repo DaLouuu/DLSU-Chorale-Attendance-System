@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "@/components/theme-provider"
-import { Home, ClipboardCheck, FileText, User, Settings, ChevronDown } from "lucide-react"
+import { Home, ClipboardCheck, User, Settings, ChevronDown } from "lucide-react"
 import { signOutUser } from "@/lib/auth-actions"
 import { useUserRole } from "@/hooks/use-user-role"
 
@@ -19,7 +19,6 @@ export function AuthenticatedHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
   const [expandedAttendance, setExpandedAttendance] = useState(false)
-  const [expandedExcuses, setExpandedExcuses] = useState(false)
   const { isAdmin, loading } = useUserRole()
   const isDarkMode = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
@@ -98,26 +97,26 @@ export function AuthenticatedHeader({
 
           {/* Navigation Menu - Desktop */}
           <nav className="hidden xl:flex items-center space-x-6">
-                          <Link href="/dashboard">
-                <Button 
-                  variant="ghost" 
-                  className={`relative transition-all duration-200 ${
-                    currentPage === "dashboard"
-                      ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
-                        : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  }`}
-                >
-                  <Home className="h-4 w-4 mr-2" />
-                  Dashboard
-                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
-                    currentPage === "dashboard" 
-                      ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
-                  }`}></div>
-                </Button>
-              </Link>
+            <Link href="/dashboard">
+              <Button 
+                variant="ghost" 
+                className={`relative transition-all duration-200 ${
+                  currentPage === "dashboard"
+                    ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
+                    : isDarkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
+                      : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
+                }`}
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Dashboard
+                <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
+                  currentPage === "dashboard" 
+                    ? 'w-full bg-[#136c37] dark:bg-white' 
+                    : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
+                }`}></div>
+              </Button>
+            </Link>
 
             {/* Desktop Attendance Menu */}
             {isAdmin ? (
@@ -179,13 +178,27 @@ export function AuthenticatedHeader({
                           View Individual Attendance
                         </div>
                       </Link>
+                      <Link href="/manage-paalams">
+                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                          isDarkMode 
+                            ? 'text-white hover:bg-[#0a4429]' 
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}>
+                          <ClipboardCheck className="h-4 w-4" />
+                          Manage Paalams
+                        </div>
+                      </Link>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <Link href="/attendance-overview">
-                <Button 
+              <div 
+                className="relative"
+                onMouseEnter={() => setHoveredDropdown('attendance')}
+                onMouseLeave={() => setHoveredDropdown(null)}
+              >
+                <Button
                   variant="ghost"
                   className={`relative transition-all duration-200 ${
                     currentPage === "attendance"
@@ -193,104 +206,55 @@ export function AuthenticatedHeader({
                       : isDarkMode 
                         ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
                         : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  }`}
+                  } ${hoveredDropdown === 'attendance' ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' : ''}`}
                 >
                   <ClipboardCheck className="h-4 w-4 mr-2" />
                   Attendance
                   <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
                     currentPage === "attendance" 
                       ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
-                  }`}></div>
-                </Button>
-              </Link>
-            )}
-
-            {/* Desktop Excuse Menu */}
-            {isAdmin ? (
-              <div 
-                className="relative"
-                onMouseEnter={() => setHoveredDropdown('excuses')}
-                onMouseLeave={() => setHoveredDropdown(null)}
-              >
-                <Button
-                  variant="ghost"
-                  className={`relative transition-all duration-200 ${
-                    currentPage === "excuse-form"
-                      ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
-                        : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  } ${hoveredDropdown === 'excuses' ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' : ''}`}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Excuses
-                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
-                    currentPage === "excuse-form" 
-                      ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : hoveredDropdown === 'excuses' 
+                      : hoveredDropdown === 'attendance' 
                         ? 'w-full bg-[#136c37] dark:bg-white'
                         : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
                   }`}></div>
                 </Button>
                 
                 {/* Hover Dropdown */}
-                {hoveredDropdown === 'excuses' && (
+                {hoveredDropdown === 'attendance' && (
                   <div 
                     className={`absolute top-full left-1/2 transform -translate-x-1/2 w-48 rounded-md shadow-lg z-50 ${
                       isDarkMode 
                         ? 'bg-[#09331f]' 
                         : 'bg-white'
                     }`}
-                    onMouseEnter={() => setHoveredDropdown('excuses')}
+                    onMouseEnter={() => setHoveredDropdown('attendance')}
                     onMouseLeave={() => setHoveredDropdown(null)}
                   >
                     <div className="py-1">
-                      <Link href="/attendance-form">
+                      <Link href="/attendance-overview">
                         <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
                           isDarkMode 
                             ? 'text-white hover:bg-[#0a4429]' 
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}>
-                          <FileText className="h-4 w-4" />
-                          Submit a Paalam
+                          <ClipboardCheck className="h-4 w-4" />
+                          View Individual Attendance
                         </div>
                       </Link>
-                      <Link href="/admin/excuse-approval">
+                      <Link href="/manage-paalams">
                         <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
                           isDarkMode 
                             ? 'text-white hover:bg-[#0a4429]' 
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}>
-                          <FileText className="h-4 w-4" />
-                          Approve Paalams
+                          <ClipboardCheck className="h-4 w-4" />
+                          Manage Paalams
                         </div>
                       </Link>
                     </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <Link href="/attendance-form">
-                <Button 
-                  variant="ghost"
-                  className={`relative transition-all duration-200 ${
-                    currentPage === "excuse-form"
-                      ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
-                        : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  }`}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Excuse Form
-                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
-                    currentPage === "excuse-form" 
-                      ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
-                  }`}></div>
-                </Button>
-              </Link>
             )}
 
             <Link href="/profile">
@@ -443,93 +407,74 @@ export function AuthenticatedHeader({
                           View Individual Attendance
                         </Button>
                       </Link>
+                      <Link href="/manage-paalams">
+                        <Button 
+                          variant="ghost"
+                          className={`w-full justify-start transition-all duration-200 ${
+                            currentPage === "attendance" && window.location.pathname === "/manage-paalams"
+                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
+                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                          Manage Paalams
+                        </Button>
+                      </Link>
                     </div>
                   )}
                 </div>
               ) : (
-                <Link href="/attendance-overview">
-                  <Button 
+                <div className="space-y-2">
+                  <Button
                     variant="ghost"
                     className={`w-full justify-start transition-all duration-200 ${
                       currentPage === "attendance"
                         ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
                         : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => setExpandedAttendance(!expandedAttendance)}
                   >
                     <ClipboardCheck className="h-4 w-4 mr-2" />
                     Attendance
-                  </Button>
-                </Link>
-              )}
-
-              {/* Mobile Excuse Menu */}
-              {isAdmin ? (
-                <div className="space-y-2">
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start transition-all duration-200 ${
-                      currentPage === "excuse-form"
-                        ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                        : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setExpandedExcuses(!expandedExcuses)}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Excuses
                     <ChevronDown className={`h-4 w-4 ml-auto transition-transform duration-200 ${
-                      expandedExcuses ? 'rotate-180' : ''
+                      expandedAttendance ? 'rotate-180' : ''
                     }`} />
                   </Button>
                   
-                  {expandedExcuses && (
+                  {expandedAttendance && (
                     <div className="ml-6 space-y-1">
-                      <Link href="/attendance-form">
+                      <Link href="/attendance-overview">
                         <Button 
                           variant="ghost"
                           className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "excuse-form" && window.location.pathname === "/attendance-form"
+                            currentPage === "attendance" && window.location.pathname === "/attendance-overview"
                               ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
                               : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Submit a Paalam
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                          View Individual Attendance
                         </Button>
                       </Link>
-                      <Link href="/admin/excuse-approval">
+                      <Link href="/manage-paalams">
                         <Button 
                           variant="ghost"
                           className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "excuse-form" && window.location.pathname === "/admin/excuse-approval"
+                            currentPage === "attendance" && window.location.pathname === "/manage-paalams"
                               ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
                               : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Approve Paalams
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                          Manage Paalams
                         </Button>
                       </Link>
                     </div>
                   )}
                 </div>
-              ) : (
-                <Link href="/attendance-form">
-                  <Button 
-                    variant="ghost"
-                    className={`w-full justify-start transition-all duration-200 ${
-                      currentPage === "excuse-form"
-                        ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                        : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Excuse Form
-                  </Button>
-                </Link>
               )}
 
               <Link href="/profile">

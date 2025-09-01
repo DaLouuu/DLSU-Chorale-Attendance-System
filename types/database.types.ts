@@ -20,7 +20,7 @@ export type SecHeadType = "Not Applicable" | "Logistical" | "Musical"
 export interface Database {
   public: {
     Tables: {
-      Users: {
+      profiles: {
         Row: {
           id: string
           email: string | null
@@ -87,14 +87,7 @@ export interface Database {
           sechead_type?: SecHeadType
           role?: Role | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       attendance_logs: {
         Row: {
@@ -190,25 +183,22 @@ export interface Database {
       }
       rehearsals: {
         Row: {
-          reh_id: number
-          created_at: string
-          reh_date: string
-          reh_time: string
-          reh_name: string | null
+          rehearsal_date: string
+          start_time: string
+          end_time: string
+          notes: string | null
         }
         Insert: {
-          reh_id?: number
-          created_at?: string
-          reh_date: string
-          reh_time: string
-          reh_name?: string | null
+          rehearsal_date: string
+          start_time: string
+          end_time: string
+          notes?: string | null
         }
         Update: {
-          reh_id?: number
-          created_at?: string
-          reh_date?: string
-          reh_time?: string
-          reh_name?: string | null
+          rehearsal_date?: string
+          start_time?: string
+          end_time?: string
+          notes?: string | null
         }
         Relationships: []
       }
@@ -235,178 +225,28 @@ export interface Database {
           full_name?: string | null
         }
       }
-      Relationships: [
-        {
-          foreignKeyName: "profiles_id_fkey"
-          columns: ["id"]
-          referencedRelation: "users"
-          referencedColumns: ["id"]
-        },
-      ]
     }
-    attendance_logs: {
-      Row: {
-        log_id: number
-        created_at: string
-        profile_id_fk: string
-        log_method: LogMethod
-        log_status: LogStatus
-        reh_id_fk: number | null
-      }
-      Insert: {
-        log_id?: number
-        created_at?: string
-        profile_id_fk: string
-        log_method: LogMethod
-        log_status: LogStatus
-        reh_id_fk?: number | null
-      }
-      Update: {
-        log_id?: number
-        created_at?: string
-        profile_id_fk?: string
-        log_method?: LogMethod
-        log_status?: LogStatus
-        reh_id_fk?: number | null
-      }
-      Relationships: [
-        {
-          foreignKeyName: "attendance_logs_profile_id_fk_fkey"
-          columns: ["profile_id_fk"]
-          referencedRelation: "profiles"
-          referencedColumns: ["id"]
-        },
-        {
-          foreignKeyName: "attendance_logs_reh_id_fk_fkey"
-          columns: ["reh_id_fk"]
-          referencedRelation: "rehearsals"
-          referencedColumns: ["reh_id"]
-        }
-      ]
+    Views: {
+      [_ in never]: never
     }
-    excuse_requests: {
-      Row: {
-        request_id: number
-        created_at: string
-        profile_id_fk: string
-        excuse_type: ExcuseType
-        excuse_reason: string | null
-        request_date: string
-        request_time: string | null
-        status: ExcuseStatus
-        admin_notes: string | null
-        admin_id_fk: string | null
-      }
-      Insert: {
-        request_id?: number
-        created_at?: string
-        profile_id_fk: string
-        excuse_type: ExcuseType
-        excuse_reason?: string | null
-        request_date: string
-        request_time?: string | null
-        status?: ExcuseStatus
-        admin_notes?: string | null
-        admin_id_fk?: string | null
-      }
-      Update: {
-        request_id?: number
-        created_at?: string
-        profile_id_fk?: string
-        excuse_type?: ExcuseType
-        excuse_reason?: string | null
-        request_date?: string
-        request_time?: string | null
-        status?: ExcuseStatus
-        admin_notes?: string | null
-        admin_id_fk?: string | null
-      }
-      Relationships: [
-        {
-          foreignKeyName: "excuse_requests_admin_id_fk_fkey"
-          columns: ["admin_id_fk"]
-          referencedRelation: "profiles"
-          referencedColumns: ["id"]
-        },
-        {
-          foreignKeyName: "excuse_requests_profile_id_fk_fkey"
-          columns: ["profile_id_fk"]
-          referencedRelation: "profiles"
-          referencedColumns: ["id"]
-        }
-      ]
+    Functions: {
+      [_ in never]: never
     }
-    rehearsals: {
-      Row: {
-        reh_id: number
-        created_at: string
-        reh_date: string
-        reh_time: string
-        reh_name: string | null
-      }
-      Insert: {
-        reh_id?: number
-        created_at?: string
-        reh_date: string
-        reh_time: string
-        reh_name?: string | null
-      }
-      Update: {
-        reh_id?: number
-        created_at?: string
-        reh_date?: string
-        reh_time?: string
-        reh_name?: string | null
-      }
-      Relationships: []
+    Enums: {
+      ExcuseStatus: "Pending" | "Approved" | "Rejected"
+      LogMethod: "RFID" | "Manual"
+      LogStatus: "Late" | "On-time"
+      Role: "Not Applicable" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
+      VoiceSection: "Soprano" | "Alto" | "Tenor" | "Bass"
+      Committee: "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
+      ExcuseType: "Absence" | "Late" | "Step Out" | "Leave Early"
+      MembershipStatus: "Trainee" | "Junior Member" | "Senior Member"
+      CurrentTermStat: "Inactive" | "Active (Performing)" | "Active (Non-performing)" | "Honorary (Graduating)" | "On Leave of Absence (LOA)" | "Resigned" | "Withdrawn Unofficially"
+      SecHeadType: "Not Applicable" | "Logistical" | "Musical"
     }
-    directory: {
-      Row: {
-        id: number
-        created_at: string
-        school_id: number
-        email: string
-        full_name: string | null
-      }
-      Insert: {
-        id?: number
-        created_at?: string
-        school_id: number
-        email: string
-        full_name?: string | null
-      }
-      Update: {
-        id?: number
-        created_at?: string
-        school_id?: number
-        email?: string
-        full_name?: string | null
-      }
-      Relationships: []
+    CompositeTypes: {
+      [_ in never]: never
     }
-  }
-  Views: {};
-  Enums: {};
-  Views: {
-    [_ in never]: never
-  }
-  Functions: {
-    [_ in never]: never
-  }
-  Enums: {
-    ExcuseStatus: "Pending" | "Approved" | "Rejected"
-    LogMethod: "RFID" | "Manual"
-    LogStatus: "Late" | "On-time"
-    Role: "Not Applicable" | "Executive Board" | "Company Manager" | "Associate Company Manager" | "Conductor"
-    VoiceSection: "Soprano" | "Alto" | "Tenor" | "Bass"
-    Committee: "Production & Logistics" | "Finance" | "Documentations" | "Human Resources" | "Publicity & Marketing"
-    ExcuseType: "Absence" | "Late" | "Step Out" | "Leave Early"
-    MembershipStatus: "Trainee" | "Junior Member" | "Senior Member"
-    CurrentTermStat: "Inactive" | "Active (Performing)" | "Active (Non-performing)" | "Honorary (Graduating)" | "On Leave of Absence (LOA)" | "Resigned" | "Withdrawn Unofficially"
-    SecHeadType: "Not Applicable" | "Logistical" | "Musical"
-  }
-  CompositeTypes: {
-    [_ in never]: never
   }
 }
 

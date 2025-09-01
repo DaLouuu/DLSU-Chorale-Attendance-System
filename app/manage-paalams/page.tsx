@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AttendanceExcuseForm } from "@/components/attendance/excuse-form"
 import { useUserRole } from "@/hooks/use-user-role"
@@ -80,9 +79,8 @@ export default function ManagePaalamsPage() {
       end: endOfWeek(today, { weekStartsOn: 0 }),
     }),
   )
-  const [activeTab, setActiveTab] = useState("pending")
+
   const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
-  const [isApprovalView, setIsApprovalView] = useState(true)
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false)
   const { userRole, isHRMember, loading } = useUserRole()
 
@@ -126,12 +124,12 @@ export default function ManagePaalamsPage() {
     return dayNames[day.getDay()]
   }
 
-  // Check if user should see the toggle (admins or HR members only)
-  const shouldShowToggle = () => {
+  // Check if user should have access to manage paalams (admins or HR members only)
+  const shouldHaveAccess = () => {
     if (!userRole) return false
     if (userRole === "Not Applicable") return false
     if (userRole === "Executive Board" || userRole === "Company Manager" || userRole === "Associate Company Manager" || userRole === "Conductor") return true
-    // For regular members, only show toggle if they're in HR committee
+    // For regular members, only show if they're in HR committee
     if (isHRMember) return true
     return false
   }
@@ -150,6 +148,26 @@ export default function ManagePaalamsPage() {
     )
   }
 
+  // Check if user has access to manage paalams
+  if (!shouldHaveAccess()) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex min-h-screen flex-col">
+          <AuthenticatedHeader currentPage="excuse-form" />
+          <main className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+              <p className="text-gray-600 mb-6">You don&apos;t have permission to manage paalams.</p>
+              <Button asChild>
+                <a href="/dashboard">Return to Dashboard</a>
+              </Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
@@ -162,20 +180,6 @@ export default function ManagePaalamsPage() {
               <h1 className="text-2xl font-bold text-[#136c37] md:text-3xl">Manage Paalams</h1>
 
               <div className="flex items-center gap-4">
-                {/* Role-based toggle for approval view vs personal view */}
-                {shouldShowToggle() && (
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="view-mode"
-                      checked={isApprovalView}
-                      onCheckedChange={setIsApprovalView}
-                    />
-                    <Label htmlFor="view-mode" className="text-sm font-medium">
-                      {isApprovalView ? "Approval View" : "My Paalams"}
-                    </Label>
-                  </div>
-                )}
-
                 {/* Submit Paalam Button */}
                 <Dialog open={isSubmitModalOpen} onOpenChange={setIsSubmitModalOpen}>
                   <DialogTrigger asChild>
@@ -340,7 +344,7 @@ export default function ManagePaalamsPage() {
                   {/* Paalam Overview Title */}
                   <div className="px-4 pt-4">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
-                      {format(selectedDate, "MMMM d, yyyy")} - {isApprovalView ? "Paalam Approvals" : "My Paalams"}
+                      {format(selectedDate, "MMMM d, yyyy")} - Paalam Approvals
                     </h2>
                   </div>
 
@@ -384,46 +388,7 @@ export default function ManagePaalamsPage() {
 
                   {/* Paalam Content */}
                   <CardContent className="pt-4">
-                    {isApprovalView ? (
-                      <ExcuseApprovalContent />
-                    ) : (
-                      <div className="space-y-4">
-                        {/* Tabs for Pending and Approved */}
-                        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-                          <TabsList className="grid grid-cols-2 w-full bg-gray-100 p-1 rounded-lg">
-                            <TabsTrigger
-                              value="pending"
-                              className="data-[state=active]:bg-[#136c37] data-[state=active]:text-white"
-                            >
-                              <Clock className="w-4 h-4 mr-2" />
-                              Pending
-                            </TabsTrigger>
-                            <TabsTrigger
-                              value="approved"
-                              className="data-[state=active]:bg-[#136c37] data-[state=active]:text-white"
-                            >
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Approved
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-
-                        {/* Content based on active tab */}
-                        <div className="py-8 text-center text-gray-500">
-                          {activeTab === "pending" ? (
-                            <div>
-                              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                              <p>No pending paalams for this date.</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <UserCheck className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                              <p>No approved paalams for this date.</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <ExcuseApprovalContent />
                   </CardContent>
                 </Card>
               </div>

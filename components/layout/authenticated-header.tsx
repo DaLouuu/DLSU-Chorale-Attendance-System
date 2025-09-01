@@ -19,7 +19,7 @@ export function AuthenticatedHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
   const [expandedAttendance, setExpandedAttendance] = useState(false)
-  const { isAdmin, loading } = useUserRole()
+  const { loading, userRole, hasSecheadType } = useUserRole()
   const isDarkMode = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   const handleSignOut = async () => {
@@ -119,143 +119,77 @@ export function AuthenticatedHeader({
             </Link>
 
             {/* Desktop Attendance Menu */}
-            {isAdmin ? (
-              <div 
-                className="relative"
-                onMouseEnter={() => setHoveredDropdown('attendance')}
-                onMouseLeave={() => setHoveredDropdown(null)}
+            <div 
+              className="relative"
+              onMouseEnter={() => setHoveredDropdown('attendance')}
+              onMouseLeave={() => setHoveredDropdown(null)}
+            >
+              <Button
+                variant="ghost"
+                className={`relative transition-all duration-200 ${
+                  currentPage === "attendance"
+                    ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
+                    : isDarkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
+                      : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
+                } ${hoveredDropdown === 'attendance' ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' : ''}`}
               >
-                <Button
-                  variant="ghost"
-                  className={`relative transition-all duration-200 ${
-                    currentPage === "attendance"
-                      ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
-                        : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  } ${hoveredDropdown === 'attendance' ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' : ''}`}
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Attendance
+                <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
+                  currentPage === "attendance" 
+                    ? 'w-full bg-[#136c37] dark:bg-white' 
+                    : hoveredDropdown === 'attendance' 
+                      ? 'w-full bg-[#136c37] dark:bg-white'
+                      : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
+                }`}></div>
+              </Button>
+              
+              {/* Hover Dropdown */}
+              {hoveredDropdown === 'attendance' && (
+                <div 
+                  className={`absolute top-full left-1/2 transform -translate-x-1/2 w-48 rounded-md shadow-lg z-50 ${
+                    isDarkMode 
+                      ? 'bg-[#09331f]' 
+                      : 'bg-white'
+                  }`}
+                  onMouseEnter={() => setHoveredDropdown('attendance')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
                 >
-                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                  Attendance
-                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
-                    currentPage === "attendance" 
-                      ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : hoveredDropdown === 'attendance' 
-                        ? 'w-full bg-[#136c37] dark:bg-white'
-                        : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
-                  }`}></div>
-                </Button>
-                
-                {/* Hover Dropdown */}
-                {hoveredDropdown === 'attendance' && (
-                  <div 
-                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-48 rounded-md shadow-lg z-50 ${
-                      isDarkMode 
-                        ? 'bg-[#09331f]' 
-                        : 'bg-white'
-                    }`}
-                    onMouseEnter={() => setHoveredDropdown('attendance')}
-                    onMouseLeave={() => setHoveredDropdown(null)}
-                  >
-                    <div className="py-1">
-                      <Link href="/admin/attendance-overview">
-                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                          isDarkMode 
-                            ? 'text-white hover:bg-[#0a4429]' 
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}>
-                          <ClipboardCheck className="h-4 w-4" />
-                          View Group Attendance
-                        </div>
-                      </Link>
-                      <Link href="/attendance-overview">
-                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                          isDarkMode 
-                            ? 'text-white hover:bg-[#0a4429]' 
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}>
-                          <ClipboardCheck className="h-4 w-4" />
-                          View Individual Attendance
-                        </div>
-                      </Link>
-                      <Link href="/manage-paalams">
-                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                          isDarkMode 
-                            ? 'text-white hover:bg-[#0a4429]' 
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}>
-                          <ClipboardCheck className="h-4 w-4" />
-                          Manage Paalams
-                        </div>
-                      </Link>
-                    </div>
+                  <div className="py-1">
+                    {(() => {
+                      const hasValidRole = userRole && userRole !== "Not Applicable"
+                      const hasValidSecheadType = hasSecheadType
+                      const hasRoleOrSechead = hasValidRole || hasValidSecheadType
+                      const attendancePage = hasRoleOrSechead ? "/admin/attendance-overview" : "/attendance-overview"
+                      
+                      return (
+                        <Link href={attendancePage}>
+                          <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                            isDarkMode 
+                              ? 'text-white hover:bg-[#0a4429]' 
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}>
+                            <ClipboardCheck className="h-4 w-4" />
+                            View Attendance
+                          </div>
+                        </Link>
+                      )
+                    })()}
+                    <Link href="/manage-paalams">
+                      <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                        isDarkMode 
+                          ? 'text-white hover:bg-[#0a4429]' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}>
+                        <ClipboardCheck className="h-4 w-4" />
+                        Manage Paalams
+                      </div>
+                    </Link>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div 
-                className="relative"
-                onMouseEnter={() => setHoveredDropdown('attendance')}
-                onMouseLeave={() => setHoveredDropdown(null)}
-              >
-                <Button
-                  variant="ghost"
-                  className={`relative transition-all duration-200 ${
-                    currentPage === "attendance"
-                      ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' 
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:text-white hover:bg-transparent group' 
-                        : 'text-gray-700 hover:text-[#136c37] hover:bg-transparent group'
-                  } ${hoveredDropdown === 'attendance' ? 'text-[#136c37] dark:text-white hover:text-[#136c37] dark:hover:text-white hover:bg-transparent' : ''}`}
-                >
-                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                  Attendance
-                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 rounded-full transition-all duration-200 ${
-                    currentPage === "attendance" 
-                      ? 'w-full bg-[#136c37] dark:bg-white' 
-                      : hoveredDropdown === 'attendance' 
-                        ? 'w-full bg-[#136c37] dark:bg-white'
-                        : 'w-0 group-hover:w-full bg-[#136c37] dark:group-hover:bg-white'
-                  }`}></div>
-                </Button>
-                
-                {/* Hover Dropdown */}
-                {hoveredDropdown === 'attendance' && (
-                  <div 
-                    className={`absolute top-full left-1/2 transform -translate-x-1/2 w-48 rounded-md shadow-lg z-50 ${
-                      isDarkMode 
-                        ? 'bg-[#09331f]' 
-                        : 'bg-white'
-                    }`}
-                    onMouseEnter={() => setHoveredDropdown('attendance')}
-                    onMouseLeave={() => setHoveredDropdown(null)}
-                  >
-                    <div className="py-1">
-                      <Link href="/attendance-overview">
-                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                          isDarkMode 
-                            ? 'text-white hover:bg-[#0a4429]' 
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}>
-                          <ClipboardCheck className="h-4 w-4" />
-                          View Individual Attendance
-                        </div>
-                      </Link>
-                      <Link href="/manage-paalams">
-                        <div className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                          isDarkMode 
-                            ? 'text-white hover:bg-[#0a4429]' 
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}>
-                          <ClipboardCheck className="h-4 w-4" />
-                          Manage Paalams
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
             <Link href="/profile">
               <Button 
@@ -359,123 +293,65 @@ export function AuthenticatedHeader({
               </Link>
 
               {/* Mobile Attendance Menu */}
-              {isAdmin ? (
-                <div className="space-y-2">
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start transition-all duration-200 ${
-                      currentPage === "attendance"
-                        ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                        : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setExpandedAttendance(!expandedAttendance)}
-                  >
-                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                    Attendance
-                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform duration-200 ${
-                      expandedAttendance ? 'rotate-180' : ''
-                    }`} />
-                  </Button>
-                  
-                  {expandedAttendance && (
-                    <div className="ml-6 space-y-1">
-                      <Link href="/admin/attendance-overview">
-                        <Button 
-                          variant="ghost"
-                          className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "attendance" && window.location.pathname === "/admin/attendance-overview"
-                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          View Group Attendance
-                        </Button>
-                      </Link>
-                      <Link href="/attendance-overview">
-                        <Button 
-                          variant="ghost"
-                          className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "attendance" && window.location.pathname === "/attendance-overview"
-                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          View Individual Attendance
-                        </Button>
-                      </Link>
-                      <Link href="/manage-paalams">
-                        <Button 
-                          variant="ghost"
-                          className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "attendance" && window.location.pathname === "/manage-paalams"
-                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          Manage Paalams
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start transition-all duration-200 ${
-                      currentPage === "attendance"
-                        ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                        : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setExpandedAttendance(!expandedAttendance)}
-                  >
-                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                    Attendance
-                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform duration-200 ${
-                      expandedAttendance ? 'rotate-180' : ''
-                    }`} />
-                  </Button>
-                  
-                  {expandedAttendance && (
-                    <div className="ml-6 space-y-1">
-                      <Link href="/attendance-overview">
-                        <Button 
-                          variant="ghost"
-                          className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "attendance" && window.location.pathname === "/attendance-overview"
-                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          View Individual Attendance
-                        </Button>
-                      </Link>
-                      <Link href="/manage-paalams">
-                        <Button 
-                          variant="ghost"
-                          className={`w-full justify-start transition-all duration-200 ${
-                            currentPage === "attendance" && window.location.pathname === "/manage-paalams"
-                              ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
-                              : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          Manage Paalams
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="space-y-2">
+                <Button 
+                  variant="ghost"
+                  className={`w-full justify-start transition-all duration-200 ${
+                    currentPage === "attendance"
+                      ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
+                      : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  onClick={() => setExpandedAttendance(!expandedAttendance)}
+                >
+                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                  Attendance
+                  <ChevronDown className={`h-4 w-4 ml-auto transition-transform duration-200 ${
+                    expandedAttendance ? 'rotate-180' : ''
+                  }`} />
+                </Button>
+                
+                {expandedAttendance && (
+                  <div className="ml-6 space-y-1">
+                    {(() => {
+                      const hasValidRole = userRole && userRole !== "Not Applicable"
+                      const hasValidSecheadType = hasSecheadType
+                      const hasRoleOrSechead = hasValidRole || hasValidSecheadType
+                      const attendancePage = hasRoleOrSechead ? "/admin/attendance-overview" : "/attendance-overview"
+                      
+                      return (
+                        <Link href={attendancePage}>
+                          <Button 
+                            variant="ghost"
+                            className={`w-full justify-start transition-all duration-200 ${
+                              currentPage === "attendance" && window.location.pathname === attendancePage
+                                ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
+                                : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <ClipboardCheck className="h-4 w-4 mr-2" />
+                            View Attendance
+                          </Button>
+                        </Link>
+                      )
+                    })()}
+                    <Link href="/manage-paalams">
+                      <Button 
+                        variant="ghost"
+                        className={`w-full justify-start transition-all duration-200 ${
+                          currentPage === "attendance" && window.location.pathname === "/manage-paalams"
+                            ? 'text-[#136c37] dark:text-green-500 bg-gray-100 dark:bg-gray-800' 
+                            : 'text-gray-700 dark:text-gray-200 hover:text-[#136c37] dark:hover:text-green-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ClipboardCheck className="h-4 w-4 mr-2" />
+                        Manage Paalams
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               <Link href="/profile">
                 <Button 

@@ -172,7 +172,7 @@ export async function createExcuseRequest(
       console.error("createExcuseRequest error:", error, "Status:", status, statusText);
       return { error };
     }
-    if (!data || (Array.isArray(data) && data.length === 0)) {
+    if (!data) {
       console.error("createExcuseRequest: No data returned after insert.", data, "Status:", status, statusText);
       return { error: new Error("No data returned after insert.") };
     }
@@ -200,12 +200,12 @@ export async function deleteExcuseRequest(requestID: number) {
 // REHEARSALS
 export async function getRehearsals() {
   const supabase = await createClient()
-  return supabase.from("rehearsals").select("*").order("reh_date", { ascending: false })
+  return supabase.from("rehearsals").select("*").order("rehearsal_date", { ascending: false })
 }
 
 export async function getRehearsalById(rehearsalID: number) {
   const supabase = await createClient()
-  return supabase.from("rehearsals").select("*").eq("reh_id", rehearsalID).single()
+  return supabase.from("rehearsals").select("*").eq("rehearsal_date", rehearsalID).single()
 }
 
 export async function getRehearsalsByDate(date: string) {
@@ -214,8 +214,8 @@ export async function getRehearsalsByDate(date: string) {
     const { data, error } = await supabase
       .from("rehearsals")
       .select("*")
-      .eq("reh_date", date)
-      .order("reh_time", { ascending: true })
+      .eq("rehearsal_date", date)
+      .order("start_time", { ascending: true })
 
     if (error) {
       console.error("Error fetching rehearsals by date:", error)
@@ -241,12 +241,12 @@ export async function updateRehearsal(
   updates: Partial<Database["public"]["Tables"]["rehearsals"]["Update"]>,
 ) {
   const supabase = await createClient()
-  return supabase.from("rehearsals").update(updates).eq("reh_id", rehearsalID)
+  return supabase.from("rehearsals").update(updates).eq("rehearsal_date", rehearsalID)
 }
 
 export async function deleteRehearsal(rehearsalID: number) {
   const supabase = await createClient()
-  return supabase.from("rehearsals").delete().eq("reh_id", rehearsalID)
+  return supabase.from("rehearsals").delete().eq("rehearsal_date", rehearsalID)
 }
 
 // DIRECTORY (keeping for backward compatibility if needed)

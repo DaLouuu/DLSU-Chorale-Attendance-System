@@ -10,18 +10,76 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { useUserRole } from "@/hooks/use-user-role"
 import Link from "next/link"
+import IndividualAttendanceOverview from "@/components/attendance/individual-attendance-overview"
 
 export default function AttendanceOverviewPage() {
-  const [attendanceData, setAttendanceData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [attendanceData, setAttendanceData] = useState<{
+    id: string;
+    name: string;
+    voiceSection: string;
+    status: string;
+    attendanceType: string;
+    time?: string;
+    notes?: string;
+    reason?: string;
+    etd?: string;
+    voiceNumber?: string;
+  }[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isGroupView, setIsGroupView] = useState(false);
+  const { userRole, loading, hasSecheadType } = useUserRole();
+  const [session, setSession] = useState<{
+    user: {
+      id: string;
+      email?: string;
+    };
+    access_token: string;
+    refresh_token: string;
+  } | null>(null);
+  
+  // Group view state
+  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(today)
+  const [currentWeek, setCurrentWeek] = useState(
+    eachDayOfInterval({
+      start: startOfWeek(today, { weekStartsOn: 0 }),
+      end: endOfWeek(today, { weekStartsOn: 0 }),
+    }),
+  )
+  const [activeVoice, setActiveVoice] = useState("all")
+  const [activeTab, setActiveTab] = useState("present")
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
+  const [voiceDropdownOpen, setVoiceDropdownOpen] = useState(false)
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const [viewDropdownOpen, setViewDropdownOpen] = useState(false)
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false)
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false)
+
+  // Check if user should see the toggle (requires either role OR secheadtype)
+  const shouldShowToggle = () => {
+    // Show toggle if user has either a valid role OR a secheadtype
+    const hasValidRole = userRole && userRole !== "Not Applicable"
+    const hasValidSecheadType = hasSecheadType
+    return hasValidRole || hasValidSecheadType
+  }
 
   // Fetch attendance and excuse data from Supabase
   useEffect(() => {
     async function fetchAttendanceData() {
-      setLoading(true);
       const supabase = (await import("@/utils/supabase/client")).createClient();
+
+      // Get session first
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      
+      if (currentSession) {
+        setSession(currentSession);
+      }
 
       // Fetch attendance logs with profile info
       const { data: logs, error: logsError } = await supabase
@@ -33,12 +91,21 @@ export default function AttendanceOverviewPage() {
         .from("excuse_requests")
         .select("*, profiles(first_name, last_name, section)");
 
+      // Fetch rehearsals data
+      const { error: rehearsalsError } = await supabase
+        .from("rehearsals")
+        .select("rehearsal_date, start_time, end_time, notes")
+        .order("rehearsal_date", { ascending: true });
+
+      if (rehearsalsError) {
+        console.error("Error fetching rehearsals:", rehearsalsError);
+      }
+
       if (logsError || excusesError) {
         setAttendanceData([]);
         setErrorMessage(
           logsError?.message || excusesError?.message || "Failed to retrieve attendance data from the database."
         );
-        setLoading(false);
         return;
       }
 
@@ -101,26 +168,23 @@ export default function AttendanceOverviewPage() {
         }));
 
       setAttendanceData([...present, ...stepOut, ...excused, ...unexcused]);
-      setLoading(false);
     }
     fetchAttendanceData();
   }, []);
-  const today = new Date()
-  const [selectedDate, setSelectedDate] = useState(today)
-  const [currentWeek, setCurrentWeek] = useState(
-    eachDayOfInterval({
-      start: startOfWeek(today, { weekStartsOn: 0 }),
-      end: endOfWeek(today, { weekStartsOn: 0 }),
-    }),
-  )
-  const [activeVoice, setActiveVoice] = useState("all")
-  const [activeTab, setActiveTab] = useState("present")
-  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
-  const [voiceDropdownOpen, setVoiceDropdownOpen] = useState(false)
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
-  const [viewDropdownOpen, setViewDropdownOpen] = useState(false)
-  const [yearDropdownOpen, setYearDropdownOpen] = useState(false)
-  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false)
+
+  // Don't render until we know the user's role
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex min-h-screen flex-col">
+          <AuthenticatedHeader currentPage="attendance" />
+          <main className="flex-1 flex items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#136c37] border-t-transparent"></div>
+          </main>
+        </div>
+      </div>
+    )
+  }
 
   // Update week when navigating
   const navigateWeek = (direction: 'prev' | 'next') => {
@@ -159,8 +223,8 @@ export default function AttendanceOverviewPage() {
       if (voiceDiff !== 0) return voiceDiff
       
       // Then sort by section number (1 comes before 2)
-      const aSectionNum = parseInt(a.voiceNumber) || 0
-      const bSectionNum = parseInt(b.voiceNumber) || 0
+      const aSectionNum = parseInt(a.voiceNumber || '0') || 0
+      const bSectionNum = parseInt(b.voiceNumber || '0') || 0
       if (aSectionNum !== bSectionNum) return aSectionNum - bSectionNum
       
       // Finally sort by surname (last name)
@@ -243,22 +307,35 @@ export default function AttendanceOverviewPage() {
             )}
             {/* Page title */}
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-[#136c37] md:text-3xl">Group Attendance</h1>
+              <h1 className="text-2xl font-bold text-[#136c37] md:text-3xl">
+                {isGroupView ? "Group Attendance" : "My Attendance"}
+              </h1>
 
-              <Button asChild className="bg-[#136c37] hover:bg-[#136c37]/90 text-white">
-                <Link href="/manage-paalams">
-                  <ClipboardCheck className="mr-2 h-4 w-4" />
-                  Manage Paalams
-                </Link>
-              </Button>
+              <div className="flex items-center gap-4">
+                {/* Role-based toggle for group view vs individual view */}
+                {shouldShowToggle() && (
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="view-mode"
+                      checked={isGroupView}
+                      onCheckedChange={setIsGroupView}
+                      className="data-[state=checked]:bg-[#136c37]"
+                    />
+                    <Label htmlFor="view-mode" className="text-sm font-medium">
+                      {isGroupView ? "Group View" : "Individual View"}
+                    </Label>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Attendance Analytics */}
-              <div className="lg:col-span-1 space-y-6">
+            {isGroupView ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Attendance Analytics */}
+                <div className="lg:col-span-1 space-y-6">
                 <Card className="shadow-md border-gray-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-bold text-gray-900">Attendance Analytics</CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-900 text-left">Attendance Analytics</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4">
                     {/* Year and Month Dropdowns */}
@@ -517,9 +594,17 @@ export default function AttendanceOverviewPage() {
 
                   {/* Attendance Overview Title */}
                   <div className="px-4 pt-4">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">
-                      {format(selectedDate, "MMMM d, yyyy")} - Attendance Overview
-                    </h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {format(selectedDate, "MMMM d, yyyy")} - Attendance Overview
+                      </h2>
+                      <Button asChild className="bg-[#136c37] hover:bg-[#136c37]/90 text-white">
+                        <Link href="/manage-paalams">
+                          <ClipboardCheck className="mr-2 h-4 w-4" />
+                          Manage Paalams
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Voice Filter */}
@@ -895,6 +980,10 @@ export default function AttendanceOverviewPage() {
                 </Card>
               </div>
             </div>
+            ) : (
+              /* Individual View - Use shared component */
+              <IndividualAttendanceOverview userId={session?.user?.id || ""} />
+            )}
           </div>
         </main>
       </div>

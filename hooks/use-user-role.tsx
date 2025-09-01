@@ -9,6 +9,7 @@ export type UserRole = "Not Applicable" | "Executive Board" | "Company Manager" 
 export function useUserRole() {
   const [userRole, setUserRole] = useState<UserRole>("unknown")
   const [userCommittee, setUserCommittee] = useState<string | null>(null)
+  const [userSecheadType, setUserSecheadType] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -24,6 +25,7 @@ export function useUserRole() {
       setLoading(false)
       setUserRole("unknown")
       setUserCommittee(null)
+      setUserSecheadType(null)
       setError(null)
       return
     }
@@ -57,7 +59,7 @@ export function useUserRole() {
 
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("role, committee")
+          .select("role, committee, sechead_type")
           .eq("id", user.id)
           .single()
 
@@ -76,9 +78,11 @@ export function useUserRole() {
         } else if (profileData) {
           setUserRole(profileData.role as UserRole)
           setUserCommittee(profileData.committee)
+          setUserSecheadType(profileData.sechead_type)
         } else {
           setUserRole("unknown")
           setUserCommittee(null)
+          setUserSecheadType(null)
         }
       } catch (error) {
         if (!isMounted) return
@@ -105,14 +109,17 @@ export function useUserRole() {
   const isMember = userRole === "member"
   const isAuthenticated = userRole !== "unknown"
   const isHRMember = userCommittee === "Human Resources"
+  const hasSecheadType = userSecheadType && userSecheadType !== "Not Applicable"
 
   return {
     userRole,
     userCommittee,
+    userSecheadType,
     isAdmin,
     isMember,
     isAuthenticated,
     isHRMember,
+    hasSecheadType,
     loading,
     error
   }

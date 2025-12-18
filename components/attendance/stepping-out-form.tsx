@@ -16,9 +16,11 @@ export function SteppingOutForm() {
   const [returnTime, setReturnTime] = useState("")
   const [reason, setReason] = useState("")
   const [description, setDescription] = useState("")
+  const [submissionStatus, setSubmissionStatus] = useState<"success"|"error"|"">("")
+  const [submissionMessage, setSubmissionMessage] = useState("")
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
     // Validate form
     if (!date || !leaveTime || !returnTime || !reason) {
@@ -26,8 +28,8 @@ export function SteppingOutForm() {
         title: "Error",
         description: "Please fill in all required fields",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Validate that return time is after leave time
@@ -36,27 +38,90 @@ export function SteppingOutForm() {
         title: "Error",
         description: "Return time must be after leave time",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const supabase = (await import("@/utils/supabase/client")).createClient();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        setSubmissionStatus("error");
+        setSubmissionMessage("You must be logged in to submit an excuse. Please login again.");
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to submit an excuse. Please login again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      // Get profile ID
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", session.user.id)
+        .single();
+      if (profileError || !profileData) {
+        setSubmissionStatus("error");
+        setSubmissionMessage("Could not find your profile information. Please ensure your account is fully set up or contact support.");
+        toast({
+          title: "Error",
+          description: "Could not find your profile information. Please ensure your account is fully set up or contact support.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      // Insert stepping out excuse
+      const { error: insertError, status } = await supabase
+        .from("excuse_requests")
+        .insert({
+          account_id_fk: profileData.id,
+          excused_date: date,
+          excuse_type: "Step Out",
+          notes: reason,
+          eta: leaveTime || null,
+          etd: returnTime || null,
+          status: "Pending",
+        });
+      if (insertError || (typeof status === "number" && status !== 201)) {
+        setSubmissionStatus("error");
+        setSubmissionMessage(`Failed to submit excuse. ${insertError?.message || "Unknown error."}`);
+        toast({
+          title: "Database Error",
+          description: `Failed to submit excuse. ${insertError?.message || "Unknown error."}`,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      setSubmissionStatus("success");
+      setSubmissionMessage("Your excuse has been submitted successfully.");
       toast({
         title: "Success",
         description: "Your stepping out excuse has been submitted successfully",
-      })
-
+      });
       // Reset form
-      setDate("")
-      setLeaveTime("")
-      setReturnTime("")
-      setReason("")
-      setDescription("")
-      setIsSubmitting(false)
-    }, 1500)
+      setDate("");
+      setLeaveTime("");
+      setReturnTime("");
+      setReason("");
+      setDescription("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to submit excuse: ${(error as Error).message || "Please try again."}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -145,6 +210,12 @@ export function SteppingOutForm() {
           "Submit Excuse"
         )}
       </Button>
+      {submissionStatus === "success" && (
+        <div className="text-green-600 text-center font-medium mb-2">{submissionMessage}</div>
+      )}
+      {submissionStatus === "error" && (
+        <div className="text-red-600 text-center font-medium mb-2">{submissionMessage}</div>
+      )}
     </form>
   )
 }

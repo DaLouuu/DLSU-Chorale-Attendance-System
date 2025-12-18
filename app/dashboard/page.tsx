@@ -3,90 +3,81 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import Link from "next/link"
-import Image from "next/image"
 import {
-  Menu,
-  Edit3,
   FileText,
   Music,
   User,
   Calendar,
   Bell,
-  CheckCircle,
-  Clock,
-  X,
-  Shield,
   ClipboardList,
   Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
-import { signOutUser } from "@/lib/auth-actions"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
+import { useTheme } from "@/components/theme-provider"
 
 // Attendance status types
-type AttendanceStatus = "recorded" | "pending-retry" | "pending-down"
 type UserRole = "member" | "admin" | "unknown"
 
 export default function DashboardPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>("recorded")
   const [userRole, setUserRole] = useState<UserRole>("unknown")
   const [loadingUserRole, setLoadingUserRole] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const { theme } = useTheme()
+  const isDarkMode = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   // Fetch user role
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
         setLoadingUserRole(true)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        if (sessionError) {
-          console.error("[DashboardPage] Session error:", sessionError)
+        if (userError) {
+          console.error("[DashboardPage] User error:", userError)
           setUserRole("unknown")
-          router.push("/login?error=session_error_dashboard")
+          router.push("/login?error=user_error_dashboard")
           return
         }
-        if (!session) {
+        if (!user) {
           setUserRole("unknown")
-          router.push("/login?error=no_session_dashboard")
+          router.push("/login?error=no_user_dashboard")
           return
         }
 
-        const { data: accountData, error: accountError } = await supabase
-          .from("accounts")
-          .select("user_type, name") // Added name for greeting potential
-          .eq("auth_user_id", session.user.id)
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
           .single()
 
-        if (accountError) {
-          console.error("[DashboardPage] Error fetching user account data:", accountError)
+        if (profileError) {
+          console.error("[DashboardPage] Error fetching user profile data:", profileError)
           setUserRole("unknown")
-          if (accountError.code === 'PGRST116') { // No rows found
-            router.push("/auth/setup?from=dashboard_no_account")
+          if (profileError.code === 'PGRST116') { // No rows found
+            router.push("/auth/setup?from=dashboard_no_profile")
             return
           } else {
             // For other DB errors, maybe don't redirect to setup, could show an error or redirect to login
-            console.error("[DashboardPage] Other DB error fetching account, redirecting to login.")
+            console.error("[DashboardPage] Other DB error fetching profile, redirecting to login.")
             router.push("/login?error=db_error_dashboard")
           }
           return
         }
 
-        if (!accountData) {
+        if (!profileData) {
             // This case should ideally be caught by PGRST116, but as a fallback
             setUserRole("unknown")
-            router.push("/auth/setup?from=dashboard_no_account_fallback")
+            router.push("/auth/setup?from=dashboard_no_profile_fallback")
             return
         }
 
-        setUserRole(accountData.user_type === "admin" ? "admin" : "member")
-        // Potentially set user name here if you want to display it from accountData.name
+        setUserRole(profileData.role === "Executive Board" ? "admin" : "member")
+        // Potentially set user name here if you want to display it from profileData.full_name
       } catch (error) {
         console.error("[DashboardPage] Outer catch error in fetchUserRole:", error)
         setUserRole("unknown")
@@ -112,73 +103,6 @@ export default function DashboardPage() {
   const dayName = format(currentDate, "EEE")
   const monthDay = format(currentDate, "MMM d")
 
-  // Function to cycle through attendance statuses
-  const cycleAttendanceStatus = () => {
-    if (attendanceStatus === "recorded") {
-      setAttendanceStatus("pending-retry")
-    } else if (attendanceStatus === "pending-retry") {
-      setAttendanceStatus("pending-down")
-    } else {
-      setAttendanceStatus("recorded")
-    }
-  }
-
-  // Function to toggle user role
-  const toggleUserRole = () => {
-    setUserRole(userRole === "member" ? "admin" : userRole === "admin" ? "member" : "unknown")
-  }
-
-  // Function to handle sign out
-  const handleSignOut = async () => {
-    await signOutUser()
-  }
-
-  // Render attendance status box based on current status
-  const renderAttendanceStatus = () => {
-    switch (attendanceStatus) {
-      case "recorded":
-        return (
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm border border-green-200 dark:border-green-800 p-3 flex items-center gap-3 flex-1">
-            <div className="bg-green-100 dark:bg-green-800/30 rounded-full p-2">
-              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <div className="font-medium text-green-800 dark:text-green-300">Attendance recorded at</div>
-              <div className="text-green-700 dark:text-green-200 text-lg font-semibold">6:00 PM</div>
-            </div>
-          </div>
-        )
-      case "pending-retry":
-        return (
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl shadow-sm border border-amber-200 dark:border-amber-800 p-3 flex items-center gap-3 flex-1">
-            <div className="bg-amber-100 dark:bg-amber-800/30 rounded-full p-2">
-              <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <div className="font-medium text-amber-800 dark:text-amber-300">Attendance pending</div>
-              <div className="text-amber-700 dark:text-amber-200 text-sm">
-                Retry scanning your ID. If it fails again, log attendance manually.
-              </div>
-            </div>
-          </div>
-        )
-      case "pending-down":
-        return (
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl shadow-sm border border-red-200 dark:border-red-800 p-3 flex items-center gap-3 flex-1">
-            <div className="bg-red-100 dark:bg-red-800/30 rounded-full p-2">
-              <Clock className="h-6 w-6 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <div className="font-medium text-red-800 dark:text-red-300">Attendance pending</div>
-              <div className="text-red-700 dark:text-red-200 text-sm">
-                ID Scanner down. Please use Manual Attendance Logging.
-              </div>
-            </div>
-          </div>
-        )
-    }
-  }
-
   if (loadingUserRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -193,129 +117,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="bg-[#09331f] dark:bg-[#09331f] text-white shadow-md">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/images/dlsu-chorale-logo.png"
-              alt="DLSU Chorale Logo"
-              width={36}
-              height={48}
-              className="hidden sm:block"
-            />
-            <h1 className="text-xl font-bold tracking-tight">DLSU CHORALE</h1>
-          </div>
-
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-[#0a4429]">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="p-0 border-none w-[280px] sm:w-[320px] dark:bg-gray-800 dark:border-gray-700">
-              <div className="flex flex-col h-full">
-                <div className="p-4 flex justify-end">
-                  <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)}>
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-
-                <nav className="flex-1 px-4">
-                  <div className="space-y-1 mb-8">
-                    <Link
-                      href="/dashboard"
-                      className="block py-3 font-medium text-[#09331f] dark:text-white border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      href={userRole === "admin" ? "/admin/attendance-overview" : "/attendance-overview"}
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Attendance Overview
-                    </Link>
-                     <Link
-                      href={userRole === "admin" ? "/admin/all-events" : "/performances"}
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {userRole === "admin" ? "All Events (Admin)" : "Performances & Events"}
-                    </Link>
-                    <Link
-                      href="/notifications"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Notifications
-                    </Link>
-                    {userRole === "admin" && (
-                      <>
-                        <Link
-                          href="/admin/member-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Member Management
-                        </Link>
-                        <Link
-                          href="/admin/excuse-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Excuse Management
-                        </Link>
-                        <Link
-                          href="/admin/directory-management"
-                          className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Directory Management
-                        </Link>
-                      </>
-                    )}
-                    <Link
-                      href="/resources"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Resources
-                    </Link>
-                  </div>
-
-                  <div className="space-y-1 mt-auto">
-                    <Link
-                      href="/profile"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="block py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left py-3 font-medium text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </nav>
-                <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-                  DLSU Chorale Attendance v1.0
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+      <AuthenticatedHeader currentPage="dashboard" />
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6 sm:py-8">
@@ -329,7 +131,9 @@ export default function DashboardPage() {
               </div>
               <div className="border-l border-gray-200 dark:border-gray-700 pl-4 flex-1 flex flex-col justify-center">
                 <div className="font-semibold text-lg text-gray-800 dark:text-white">Today</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Good day, Chorale member!</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Welcome back! Here&apos;s what&apos;s happening today.
+                </p>
               </div>
             </div>
 
@@ -338,13 +142,13 @@ export default function DashboardPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                     <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">Attendance</h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Ready to mark your attendance for today's rehearsal?
+                        Ready to mark your attendance for today&apos;s rehearsal?
                     </p>
-                    <Link href="/attendance-form" passHref>
+                                         <Link href="/manage-paalams" passHref>
                         <Button className="w-full bg-[#09331f] hover:bg-[#0a4429] text-white">
                             Go to Attendance Form
                         </Button>
-                    </Link>
+                     </Link>
                 </div>
             )}
 
@@ -376,7 +180,7 @@ export default function DashboardPage() {
                   <Music className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                      New Repertoire Added: "Bohemian Rhapsody"
+                      New Repertoire Added: &ldquo;Bohemian Rhapsody&rdquo;
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400">2 hours ago</p>
                   </div>
@@ -435,7 +239,11 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer (Simplified) */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+      <footer className={`mt-auto ${
+        isDarkMode 
+          ? 'bg-[#09331f] shadow-lg' 
+          : 'bg-white border-t border-gray-200'
+      }`}>
         <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
           &copy; {new Date().getFullYear()} DLSU Chorale. All rights reserved.
         </div>

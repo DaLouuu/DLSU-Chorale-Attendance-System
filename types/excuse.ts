@@ -1,23 +1,19 @@
-import type { Status } from "./database.types"
+import { Database } from './database.types'
 
-export interface ExcuseItem {
-  id: number
-  name: string
-  voiceSection: string
-  voiceNumber: number
-  type: string
-  date: string
-  reason: string
-  notes?: string
-}
+export type ExcuseRequest = Database['public']['Tables']['excuse_requests']['Row']
+export type ExcuseRequestInsert = Database['public']['Tables']['excuse_requests']['Insert']
+export type ExcuseRequestUpdate = Database['public']['Tables']['excuse_requests']['Update']
 
-export interface HistoryItem {
-  id: number
-  name: string
-  voiceSection: string
-  voiceNumber: number
-  type: string
-  date: string
-  status: Status
-  declineReason?: string
+export type ExcuseStatus = Database['public']['Enums']['ExcuseStatus']
+export type ExcuseType = Database['public']['Enums']['ExcuseType']
+
+export interface ExcuseRequestWithProfile extends ExcuseRequest {
+  profiles: {
+    full_name: string | null
+    first_name: string | null
+    last_name: string | null
+    email: string | null
+    section: string | null
+    committee: string | null
+  }
 }

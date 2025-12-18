@@ -18,17 +18,17 @@ export default function SetupPage() {
       console.log("[SetupPage] Starting setupUserProfile...")
       try {
         console.log("[SetupPage] Attempting to get session...")
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        if (sessionError) {
-          console.error("[SetupPage] Session error:", sessionError)
-          throw new Error(`Session error: ${sessionError.message}`)
+        if (userError) {
+          console.error("[SetupPage] User error:", userError)
+          throw new Error(`User error: ${userError.message}`)
         }
-        if (!session) {
-          console.warn("[SetupPage] No active session found.")
-          throw new Error("No active session found")
+        if (!user) {
+          console.warn("[SetupPage] No active user found.")
+          throw new Error("No active user found")
         }
-        console.log("[SetupPage] Session retrieved:", session)
+        console.log("[SetupPage] User retrieved:", user)
 
         console.log("[SetupPage] Attempting to get registrationData from localStorage...")
         const registrationDataStr = localStorage.getItem("registrationData")
@@ -46,11 +46,11 @@ export default function SetupPage() {
           throw new Error("Failed to parse registration data")
         }
 
-        console.log(`[SetupPage] Attempting to query 'directory' for email: ${session.user.email}`)
+        console.log(`[SetupPage] Attempting to query 'directory' for email: ${user.email}`)
         const { data: directoryData, error: directoryError } = await supabase
           .from("directory")
-          .select("id, email")
-          .eq("email", session.user.email!)
+          .select("id, email, school_id")
+          .eq("email", user.email!)
           .single()
 
         if (directoryError) {
@@ -63,73 +63,78 @@ export default function SetupPage() {
         console.log("[SetupPage] Directory query result - data:", directoryData, "error:", directoryError)
 
         if (!directoryData) { // This implies directoryError was PGRST116 or it was null and no data
-          console.warn("[SetupPage] Email not found in directory. User email:" , session.user.email)
+          console.warn("[SetupPage] Email not found in directory. User email:" , user.email)
           toast.error("Your email is not found in the official directory. Please contact an administrator.")
           router.push("/unauthorized")
           return
         }
         console.log("[SetupPage] Directory data found:", directoryData)
 
-        console.log(`[SetupPage] Attempting to query 'accounts' for auth_user_id: ${session.user.id}`)
-        const { data: existingAccount, error: accountQueryError } = await supabase
-          .from("accounts")
-          .select("user_type, account_id")
-          .eq("auth_user_id", session.user.id)
+        console.log(`[SetupPage] Attempting to query 'profiles' for id: ${user.id}`)
+        const { data: existingProfile, error: profileQueryError } = await supabase
+          .from("profiles")
+          .select("role, id")
+          .eq("id", user.id)
           .single()
 
-        if (accountQueryError && accountQueryError.code !== 'PGRST116') {
-          console.error("[SetupPage] Accounts query error:", accountQueryError)
-          throw new Error(`Accounts query error: ${accountQueryError.message}`)
+        if (profileQueryError && profileQueryError.code !== 'PGRST116') {
+          console.error("[SetupPage] Profiles query error:", profileQueryError)
+          throw new Error(`Profiles query error: ${profileQueryError.message}`)
         }
-        console.log("[SetupPage] Existing account query result - data:", existingAccount, "error:", accountQueryError)
+        console.log("[SetupPage] Existing profile query result - data:", existingProfile, "error:", profileQueryError)
 
-        if (existingAccount) {
-          console.log("[SetupPage] Account already exists:", existingAccount)
-          toast.info("Account already set up.")
+        if (existingProfile) {
+          console.log("[SetupPage] Profile already exists:", existingProfile)
+          toast.info("Profile already set up.")
           setIsLoading(false);
-          if (existingAccount.user_type === "admin") {
+          if (existingProfile.role === "Executive Board") {
             console.log("[SetupPage] Redirecting existing admin to /admin/attendance-overview")
             router.push("/admin/attendance-overview")
           } else {
-            console.log("[SetupPage] Redirecting existing member to /attendance-form")
-            router.push("/attendance-form")
+                    console.log("[SetupPage] Redirecting existing member to /manage-paalams")
+        router.push("/manage-paalams")
           }
           return;
         }
-        console.log("[SetupPage] No existing account found. Proceeding to create one.")
+        console.log("[SetupPage] No existing profile found. Proceeding to create one.")
 
-        const accountToInsert = {
-          directory_id: directoryData.id,
-          auth_user_id: session.user.id,
-          name: session.user.user_metadata.full_name || session.user.user_metadata.name || registrationData.full_name || "User",
-          user_type: registrationData.user_type,
-          role: registrationData.adminRole || null,
+        const profileToInsert = {
+          school_id: directoryData.school_id,
+          id: user.id,
+          first_name: user.user_metadata.first_name || user.user_metadata.name?.split(' ')[0] || "User",
+          last_name: user.user_metadata.last_name || user.user_metadata.name?.split(' ').slice(1).join(' ') || "",
+          middle_name: user.user_metadata.middle_name || null,
+          nickname: user.user_metadata.nickname || null,
+          email: user.email,
+          role: registrationData.adminRole || "Not Applicable",
           committee: registrationData.committee || "N/A",
           section: registrationData.voiceSection || null,
-          is_execboard: registrationData.is_execboard || false,
-          is_sechead: registrationData.is_sechead || false,
+          sechead_type: "Not Applicable",
+          membership_status: "Trainee",
+          current_term_status: "Active (Performing)",
+          contact_number: null,
         }
-        console.log("[SetupPage] Data to insert into 'accounts':", accountToInsert)
+        console.log("[SetupPage] Data to insert into 'profiles':", profileToInsert)
 
-        console.log("[SetupPage] Attempting to upsert into 'accounts'...")
-        const { error: insertError } = await supabase.from("accounts").upsert(accountToInsert)
+        console.log("[SetupPage] Attempting to upsert into 'profiles'...")
+        const { error: insertError } = await supabase.from("profiles").upsert(profileToInsert)
 
         if (insertError) {
-          console.error("[SetupPage] Insert/Upsert error into 'accounts':", insertError)
+          console.error("[SetupPage] Insert/Upsert error into 'profiles':", insertError)
           throw insertError // Re-throw to be caught by the main catch block
         }
-        console.log("[SetupPage] Successfully upserted data into 'accounts'.")
+        console.log("[SetupPage] Successfully upserted data into 'profiles'.")
 
         console.log("[SetupPage] Removing 'registrationData' from localStorage.")
         localStorage.removeItem("registrationData")
         toast.success("Registration successful!")
 
-        if (accountToInsert.user_type === "admin") {
+        if (profileToInsert.role === "Executive Board" || profileToInsert.role === "Company Manager" || profileToInsert.role === "Associate Company Manager") {
           console.log("[SetupPage] Redirecting new admin to /admin/attendance-overview")
           router.push("/admin/attendance-overview")
         } else {
-          console.log("[SetupPage] Redirecting new member to /attendance-form")
-          router.push("/attendance-form")
+                  console.log("[SetupPage] Redirecting new member to /manage-paalams")
+        router.push("/manage-paalams")
         }
       } catch (error) {
         console.error("[SetupPage] Error in setupUserProfile catch block:", error)

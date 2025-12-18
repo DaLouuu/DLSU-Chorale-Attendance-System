@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "dotenv -e .env.local next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next node_modules",
+    "setup": "pnpm install && echo '✅ Dependencies installed! Now create a .env.local file with your Supabase credentials and run pnpm dev'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -66,7 +69,8 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "dotenv-cli": "^8.0.0",
+    "eslint": "^9.33.0",
+    "eslint-config-next": "^15.4.6",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

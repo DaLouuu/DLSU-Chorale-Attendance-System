@@ -8,35 +8,31 @@ import { Badge } from "@/components/ui/badge"
 import { Check, X } from "lucide-react"
 import { DeclineReasonDialog } from "@/components/excuse/decline-reason-dialog"
 
-// Update the ExcuseDetailView component to handle the simpler excuse objects
-export function ExcuseDetailView({ excuse }) {
-  const [status, setStatus] = useState(excuse.status || "PENDING")
-  const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false)
-  const [declineReason, setDeclineReason] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleApprove = () => {
-    setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
-      setStatus("APPROVED")
-      setIsSubmitting(false)
-    }, 500)
+interface ExcuseDetailViewProps {
+  excuse: {
+    id: string
+    name: string
+    date: string
+    reason: string
+    status: 'PENDING' | 'APPROVED' | 'DECLINED'
+    notes?: string
+    voiceSection?: string
+    voiceNumber?: string
+    type?: string
   }
+  isOpen: boolean
+  onClose: () => void
+  onApprove: (id: string) => void
+  onDecline: (id: string, reason: string) => void
+}
 
-  const handleDeclineClick = () => {
-    setIsDeclineDialogOpen(true)
-  }
+export function ExcuseDetailView({ excuse, onClose, onApprove, onDecline }: Omit<ExcuseDetailViewProps, 'isOpen'>) {
+  const [showDeclineForm, setShowDeclineForm] = useState(false)
 
-  const handleDeclineConfirm = (reason) => {
-    setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
-      setStatus("DECLINED")
-      setDeclineReason(reason)
-      setIsDeclineDialogOpen(false)
-      setIsSubmitting(false)
-    }, 500)
+  const handleDeclineConfirm = (reason: string) => {
+    onDecline(excuse.id, reason)
+    setShowDeclineForm(false)
+    onClose()
   }
 
   // Status colors
@@ -58,7 +54,7 @@ export function ExcuseDetailView({ excuse }) {
     },
   }
 
-  const colors = statusColors[status]
+  const colors = statusColors[excuse.status]
 
   return (
     <div className="space-y-4 py-2">
@@ -87,36 +83,36 @@ export function ExcuseDetailView({ excuse }) {
               {excuse.type}
             </Badge>
           </div>
-          <Badge className={`${colors.badge} py-1 px-3`}>{status}</Badge>
+          <Badge className={`${colors.badge} py-1 px-3`}>{excuse.status}</Badge>
         </div>
 
         <p className="text-sm">
           <span className="font-medium">Date:</span> {format(excuse.date, "MMMM d, yyyy")}
         </p>
 
-        {status === "DECLINED" && declineReason && (
+        {excuse.status === "DECLINED" && excuse.reason && (
           <div className="mt-2 rounded-md bg-red-50 p-3 text-sm text-red-800">
             <p className="font-medium">Decline Reason:</p>
-            <p>{declineReason}</p>
+            <p>{excuse.reason}</p>
           </div>
         )}
       </div>
 
-      {status === "PENDING" && (
+      {excuse.status === "PENDING" && (
         <div className="flex gap-3 pt-2">
           <Button
-            onClick={handleApprove}
+            onClick={() => onApprove(excuse.id)}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-            disabled={isSubmitting}
+            disabled={false} // isSubmitting is removed
           >
             <Check className="mr-2 h-4 w-4" />
             Approve
           </Button>
           <Button
-            onClick={handleDeclineClick}
+            onClick={() => setShowDeclineForm(true)}
             variant="outline"
             className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
-            disabled={isSubmitting}
+            disabled={false} // isSubmitting is removed
           >
             <X className="mr-2 h-4 w-4" />
             Decline
@@ -126,12 +122,12 @@ export function ExcuseDetailView({ excuse }) {
 
       {/* Decline Reason Dialog */}
       <DeclineReasonDialog
-        isOpen={isDeclineDialogOpen}
-        onClose={() => setIsDeclineDialogOpen(false)}
+        isOpen={showDeclineForm}
+        onClose={() => setShowDeclineForm(false)}
         onConfirm={handleDeclineConfirm}
         excuseName={excuse.name}
-        excuseType={excuse.type}
-        excuseDate={format(excuse.date, "MMMM d, yyyy")}
+        excuseType={excuse.type || 'Unknown'}
+        excuseDate={excuse.date}
       />
     </div>
   )

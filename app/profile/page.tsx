@@ -2,37 +2,97 @@
 
 import type React from "react"
 
-import { useEffect, useState, useRef } from "react"
-import { PageHeader } from "@/components/layout/page-header"
-import { PageFooter } from "@/components/layout/page-footer"
-import { DashboardNav } from "@/components/layout/dashboard-nav"
+import { useState, useRef, useEffect } from "react"
+import { AuthenticatedHeader } from "@/components/layout/authenticated-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { Pencil, Save, X } from "lucide-react"
-import { format } from 'date-fns'
+
+const COLLEGE_OPTIONS = [
+  "Brother Andrew Gonzales College of Education",
+  "Carlos L. Tiu School of Economics",
+  "College of Computer Studies",
+  "College of Liberal Arts",
+  "College of Science",
+  "Gokongwei College of Engineering",
+  "Ramon V. del Rosario College of Business",
+  "School of Innovation and Sustainability (Laguna Campus)",
+  "Tañada-Diokno School of Law"
+]
+
+const COMMITTEE_OPTIONS = [
+  "Production & Logistics",
+  "Finance",
+  "Documentations",
+  "Human Resources",
+  "Publicity & Marketing"
+]
+
+const VOICE_SECTION_OPTIONS = [
+  "Soprano",
+  "Alto",
+  "Tenor",
+  "Bass"
+]
+
+const MEMBERSHIP_STATUS_OPTIONS = [
+  "Trainee",
+  "Junior Member",
+  "Senior Member"
+]
+
+const CURRENT_TERM_STAT_OPTIONS = [
+  "Inactive",
+  "Active (Performing)",
+  "Active (Non-performing)",
+  "Honorary (Graduating)",
+  "On Leave of Absence (LOA)",
+  "Resigned",
+  "Withdrawn Unofficially"
+]
+
+const ROLE_OPTIONS = [
+  "Not Applicable",
+  "Executive Board",
+  "Company Manager",
+  "Associate Company Manager",
+  "Conductor"
+]
+
+const SECHEAD_TYPE_OPTIONS = [
+  "Not Applicable",
+  "Logistical",
+  "Musical"
+]
 
 interface UserProfile {
-  account_id: number
-  auth_user_id: string
-  name: string | null
-  role: string | null
+  id: string
+  email: string | null
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
   committee: string | null
+  role: string | null
   section: string | null
-  user_type: string | null
-  is_execboard: boolean | null
-  is_sechead: boolean | null
-  email: string
+  school_id: number | null
+  degree_code: string | null
+  college: string | null
+  membership_status: string | null
+  current_term_status: string | null
   birthday: string | null
-  id_number: string | null
-  degree_program: string | null
-  contact_number: string | null
-  profile_image_url: string | null
+  last_name: string | null
+  first_name: string | null
+  middle_name: string | null
+  nickname: string | null
+  contact_number: number | null
+  sechead_type: string
 }
 
 export default function ProfilePage() {
@@ -41,7 +101,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editedProfile, setEditedProfile] = useState<Partial<Pick<UserProfile, 'name' | 'committee' | 'section' | 'birthday' | 'degree_program' | 'contact_number'>>>({})
+  const [editedProfile, setEditedProfile] = useState<Partial<Pick<UserProfile, 'first_name' | 'last_name' | 'middle_name' | 'nickname' | 'committee' | 'section' | 'degree_code' | 'college' | 'membership_status' | 'current_term_status' | 'birthday' | 'contact_number' | 'role' | 'sechead_type'>>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -51,95 +111,124 @@ export default function ProfilePage() {
       console.log("[ProfilePage] Fetching profile...")
       try {
         const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser()
 
-        if (sessionError || !session) {
-          console.error("[ProfilePage] No active session", sessionError)
-          toast.error("No active session. Please login.")
+        if (userError || !user) {
+          console.error("[ProfilePage] No active user", userError)
+          toast.error("No active user. Please login.")
           setLoading(false)
           return
         }
-        console.log("[ProfilePage] Session found for user:", session.user.id)
+        console.log("[ProfilePage] User found:", user.id)
 
+        // First, try a simple query to test RLS access
+        console.log("[ProfilePage] Testing basic RLS access...")
+        const { data: testData, error: testError } = await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("id", user.id)
+          .single()
+        
+        console.log("[ProfilePage] Test query result:", testData, "error:", testError)
+        
+        if (testError) {
+          console.error("[ProfilePage] Basic RLS test failed:", testError)
+          if (testError.message?.includes('policy') || testError.message?.includes('permission')) {
+            toast.error("Database access denied. This is an RLS policy issue.")
+            setLoading(false)
+            return
+          }
+        }
+
+        // Now try the full query
         const { data: accountData, error: accountError } = await supabase
-          .from("accounts")
+          .from("profiles")
           .select(`
-            account_id,
-            auth_user_id,
-            name,
-            role,
+            id,
+            email,
+            avatar_url,
+            created_at,
+            updated_at,
             committee,
+            role,
             section,
-            user_type,
-            is_execboard,
-            is_sechead,
-            profile_image_url, 
-            contact_number, 
-            degree_program, 
-            birthday, 
-            directory_id
+            school_id,
+            degree_code,
+            college,
+            membership_status,
+            current_term_status,
+            birthday,
+            last_name,
+            first_name,
+            middle_name,
+            nickname,
+            contact_number,
+            sechead_type
           `)
-          .eq("auth_user_id", session.user.id)
+          .eq("id", user.id)
           .single()
 
+        console.log("[ProfilePage] Raw query result - data:", accountData, "error:", accountError)
+
         if (accountError) {
-          console.error("[ProfilePage] Error fetching account data:", accountError)
+          console.error("[ProfilePage] Error fetching profile data:", accountError)
+          console.error("[ProfilePage] Error details - code:", accountError.code, "message:", accountError.message, "details:", accountError.details)
+          
           if (accountError.code === 'PGRST116') {
             toast.error("Profile data not found. Please complete setup.")
+          } else if (accountError.message?.includes('policy') || accountError.message?.includes('permission')) {
+            toast.error("Access denied. This might be due to database permissions.")
+            console.error("[ProfilePage] This appears to be an RLS policy issue")
           } else {
             toast.error("Failed to load profile data.")
           }
           setLoading(false)
           return
         }
-        console.log("[ProfilePage] Account data fetched:", accountData)
-
-        let idNumberFromDirectory: string | null = null
-        if (accountData.directory_id) {
-          console.log(`[ProfilePage] Fetching ID number from directory for directory_id: ${accountData.directory_id}`)
-          const { data: dirData, error: dirError } = await supabase
-            .from("directory")
-            .select("id")
-            .eq("id", accountData.directory_id)
-            .single()
-          if (dirError) {
-            console.error("[ProfilePage] Error fetching ID number from directory:", dirError)
-            toast.message("Warning", { description: "Could not fetch ID number from directory." })
-          } else if (dirData) {
-            idNumberFromDirectory = dirData.id?.toString() || null
-            console.log("[ProfilePage] ID number from directory:", idNumberFromDirectory)
-          }
-        }
+        console.log("[ProfilePage] Profile data fetched:", accountData)
 
         const userProfileData: UserProfile = {
-          account_id: accountData.account_id,
-          auth_user_id: accountData.auth_user_id!,
-          name: accountData.name,
-          role: accountData.role,
+          id: accountData.id,
+          email: accountData.email,
+          avatar_url: accountData.avatar_url,
+          created_at: accountData.created_at,
+          updated_at: accountData.updated_at,
           committee: accountData.committee,
+          role: accountData.role,
           section: accountData.section,
-          user_type: accountData.user_type,
-          is_execboard: accountData.is_execboard,
-          is_sechead: accountData.is_sechead,
-          email: session.user.email || "",
+          school_id: accountData.school_id,
+          degree_code: accountData.degree_code,
+          college: accountData.college,
+          membership_status: accountData.membership_status,
+          current_term_status: accountData.current_term_status,
           birthday: accountData.birthday,
-          id_number: idNumberFromDirectory,
-          degree_program: accountData.degree_program,
+          last_name: accountData.last_name,
+          first_name: accountData.first_name,
+          middle_name: accountData.middle_name,
+          nickname: accountData.nickname,
           contact_number: accountData.contact_number,
-          profile_image_url: accountData.profile_image_url,
+          sechead_type: accountData.sechead_type,
         }
         setProfile(userProfileData)
         console.log("[ProfilePage] Profile state set:", userProfileData)
 
         setEditedProfile({
-          name: accountData.name || "",
+          first_name: accountData.first_name || "",
+          last_name: accountData.last_name || "",
+          middle_name: accountData.middle_name || "",
+          nickname: accountData.nickname || "",
           committee: accountData.committee || "",
           section: accountData.section || "",
+          degree_code: accountData.degree_code || "",
+          college: accountData.college || "",
+          membership_status: accountData.membership_status || "",
+          current_term_status: accountData.current_term_status || null,
           birthday: accountData.birthday || "",
-          degree_program: accountData.degree_program || "",
-          contact_number: accountData.contact_number || "",
+          contact_number: accountData.contact_number || null,
+          role: accountData.role || "",
+          sechead_type: accountData.sechead_type || "",
         })
       } catch (error) {
         console.error("Error fetching profile in outer catch:", error)
@@ -172,12 +261,20 @@ export default function ProfilePage() {
     setSelectedFile(null)
     if (profile) {
         setEditedProfile({
-            name: profile.name || "",
+            first_name: profile.first_name || "",
+            last_name: profile.last_name || "",
+            middle_name: profile.middle_name || "",
+            nickname: profile.nickname || "",
             committee: profile.committee || "",
             section: profile.section || "",
+            degree_code: profile.degree_code || "",
+            college: profile.college || "",
+            membership_status: profile.membership_status || "",
+            current_term_status: profile.current_term_status || null,
             birthday: profile.birthday || "",
-            degree_program: profile.degree_program || "",
-            contact_number: profile.contact_number || "",
+            contact_number: profile.contact_number || null,
+            role: profile.role || "",
+            sechead_type: profile.sechead_type || "",
         });
     } else {
         setEditedProfile({});
@@ -191,12 +288,12 @@ export default function ProfilePage() {
     console.log("[ProfilePage] Saving profile. Initial edited data:", editedProfile)
 
     try {
-      let newProfileImageUrl = profile.profile_image_url
+      let newProfileImageUrl = profile.avatar_url
 
       if (selectedFile) {
         console.log("[ProfilePage] Selected file present. Uploading new profile image...")
         const fileExt = selectedFile.name.split(".").pop()
-        const fileName = `${profile.auth_user_id}-${Date.now()}.${fileExt}`
+        const fileName = `${profile.id}-${Date.now()}.${fileExt}`
         const filePath = `profile-images/${fileName}`
         console.log("[ProfilePage] Uploading to path:", filePath)
 
@@ -213,21 +310,29 @@ export default function ProfilePage() {
         console.log("[ProfilePage] New profile image public URL:", newProfileImageUrl)
       }
 
-      const updatesForAccounts: Partial<UserProfile> & { profile_image_url?: string | null } = {
+      const updatesForAccounts: Partial<UserProfile> & { avatar_url?: string | null } = {
         ...editedProfile,
       }
-      if (newProfileImageUrl !== profile.profile_image_url) {
-        updatesForAccounts.profile_image_url = newProfileImageUrl
+      
+      // Ensure current_term_status is properly handled
+      if (editedProfile.current_term_status === "") {
+        updatesForAccounts.current_term_status = null;
       }
-      console.log("[ProfilePage] Data to update in 'accounts':", updatesForAccounts)
+      
+      if (newProfileImageUrl !== profile.avatar_url) {
+        updatesForAccounts.avatar_url = newProfileImageUrl
+      }
+      console.log("[ProfilePage] Data to update in 'profiles':", updatesForAccounts)
 
       const { error: updateError } = await supabase
-        .from("accounts")
+        .from("profiles")
         .update(updatesForAccounts)
-        .eq("account_id", profile.account_id)
+        .eq("id", profile.id)
 
       if (updateError) {
         console.error("[ProfilePage] Error updating account in DB:", updateError)
+        console.error("[ProfilePage] Error details - code:", updateError.code, "message:", updateError.message, "details:", updateError.details)
+        console.error("[ProfilePage] Data that failed to update:", updatesForAccounts)
         throw updateError
       }
       console.log("[ProfilePage] Account successfully updated in DB.")
@@ -252,26 +357,96 @@ export default function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditedProfile(prev => ({ ...prev, [name]: value || null }));
+    // Convert empty strings to null for database compatibility
+    const processedValue = value === "" ? null : value;
+    setEditedProfile(prev => ({ ...prev, [name]: processedValue }));
   };
 
-  const formatValue = (value: string | null | undefined) => {
-    if (!value) return "N/A"
-    return value
-      .replace(/[-_]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
+
+
+  const formatContactNumber = (contactNumber: number | null): string => {
+    if (!contactNumber) return "N/A"
+    const numberStr = contactNumber.toString()
+    
+    // Remove any leading zeros or country code indicators
+    const cleanNumber = numberStr
+    
+    // If it's 11 digits and starts with 9 (Philippine mobile format)
+    if (cleanNumber.length === 11 && cleanNumber.startsWith('9')) {
+      return `+63 ${cleanNumber.slice(1, 4)} ${cleanNumber.slice(4, 7)} ${cleanNumber.slice(7, 11)}`
+    }
+    // If it's 10 digits (Philippine mobile without leading 9)
+    else if (cleanNumber.length === 10) {
+      return `+63 ${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3, 6)} ${cleanNumber.slice(6, 10)}`
+    }
+    // If it's 9 digits (Philippine mobile without leading 9)
+    else if (cleanNumber.length === 9) {
+      return `+63 ${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3, 6)} ${cleanNumber.slice(6, 9)}`
+    }
+    // For other formats, just return the number as is
+    else {
+      return cleanNumber
+    }
+  }
+
+  const formatFullName = (lastName: string | null, firstName: string | null, middleName: string | null): string => {
+    if (!lastName && !firstName) return "N/A"
+    
+    const last = lastName || ""
+    const first = firstName || ""
+    const middle = middleName ? middleName.charAt(0).toUpperCase() + "." : ""
+    
+    if (last && first) {
+      return `${last.toUpperCase()}, ${first} ${middle}`.trim()
+    } else if (last) {
+      return last.toUpperCase()
+    } else if (first) {
+      return first
+    }
+    return "N/A"
+  }
+
+  const formatRoles = (role: string | null, secheadType: string, voiceSection: string | null): string => {
+    const roles = []
+    
+    // Add main role if applicable
+    if (role && role !== "Not Applicable") {
+      if (role === "Executive Board") {
+        roles.push(`Division Manager for ${profile?.committee || "Unknown Committee"}`)
+      } else if (role === "Company Manager") {
+        roles.push("Company Manager")
+      } else if (role === "Associate Company Manager") {
+        roles.push("Associate Company Manager")
+      } else if (role === "Conductor") {
+        roles.push("Conductor")
+      }
+    }
+    
+    // Add section head role if applicable
+    if (secheadType && secheadType !== "Not Applicable" && voiceSection) {
+      const sectionHeadTitle = `${secheadType} Section Head for ${voiceSection}`
+      roles.push(sectionHeadTitle)
+    }
+    
+    if (roles.length === 0) {
+      return "Not Applicable"
+    }
+    
+    return roles.join(", ")
+  }
+
+  const shouldShowRole = (role: string | null, committee: string | null): boolean => {
+    return role !== "Not Applicable" || committee === "Human Resources"
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen flex-col">
-        <PageHeader />
+        <AuthenticatedHeader currentPage="profile" />
 
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
           <div className="mx-auto max-w-4xl">
-            <DashboardNav isAdmin={profile?.user_type === 'admin' || false} />
+            
 
             <h1 className="text-2xl font-bold text-primary md:text-3xl mb-6">My Profile</h1>
 
@@ -324,11 +499,11 @@ export default function ProfilePage() {
                       <div className="relative">
                         <Avatar className="h-24 w-24 border-2 border-[#09331f]/20 dark:border-gray-600">
                           {isEditing && previewUrl ? (
-                            <AvatarImage src={previewUrl || undefined} alt={profile.name || "User avatar"} />
+                            <AvatarImage src={previewUrl || undefined} alt={profile.first_name || "User avatar"} />
                           ) : (
-                            <AvatarImage src={profile.profile_image_url || undefined} alt={profile.name || "User avatar"} />
+                            <AvatarImage src={profile.avatar_url || undefined} alt={profile.first_name || "User avatar"} />
                           )}
-                          <AvatarFallback>{profile.name ? profile.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+                          <AvatarFallback>{profile.first_name ? profile.first_name.charAt(0).toUpperCase() : profile.last_name ? profile.last_name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                         </Avatar>
                         {isEditing && (
                           <label htmlFor="profile-image-upload" className="absolute bottom-0 right-0 bg-[#09331f] text-white rounded-full p-1.5 cursor-pointer hover:bg-[#0a4429]">
@@ -338,12 +513,33 @@ export default function ProfilePage() {
                         )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 flex-1">
-                        <div>
-                          <Label htmlFor="name" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Full Name</Label>
+                        <div className="sm:col-span-2">
+                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Full Name</Label>
                           {isEditing ? (
-                            <Input type="text" id="name" name="name" value={editedProfile.name || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div>
+                                <Label htmlFor="first_name" className="text-xs font-semibold text-gray-500 dark:text-gray-400">First Name</Label>
+                                <Input type="text" id="first_name" name="first_name" value={editedProfile.first_name || ""} onChange={handleInputChange} placeholder="Enter First Name" className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                              </div>
+                              <div>
+                                <Label htmlFor="last_name" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Last Name</Label>
+                                <Input type="text" id="last_name" name="last_name" value={editedProfile.last_name || ""} onChange={handleInputChange} placeholder="Enter Last Name" className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                              </div>
+                              <div>
+                                <Label htmlFor="middle_name" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Middle Name</Label>
+                                <Input type="text" id="middle_name" name="middle_name" value={editedProfile.middle_name || ""} onChange={handleInputChange} placeholder="Enter Middle Name" className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                              </div>
+                            </div>
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.name || "N/A"}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatFullName(profile.last_name, profile.first_name, profile.middle_name)}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="nickname" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Nickname</Label>
+                          {isEditing ? (
+                            <Input type="text" id="nickname" name="nickname" value={editedProfile.nickname || ""} onChange={handleInputChange} placeholder="Enter Nickname" className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.nickname || "N/A"}</p>
                           )}
                         </div>
                         <div>
@@ -352,72 +548,155 @@ export default function ProfilePage() {
                         </div>
                         <div>
                           <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">ID Number</Label>
-                          <p className="text-base text-gray-800 dark:text-white">{profile.id_number || "N/A"}</p>
+                          <p className="text-base text-gray-800 dark:text-white">{profile.school_id || "N/A"}</p>
                         </div>
-                        <div>
-                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">User Type</Label>
-                          <Badge variant={profile.user_type === "admin" ? "destructive" : "secondary"} className="capitalize">
-                            {formatValue(profile.user_type)}
-                          </Badge>
-                        </div>
-                        {profile.user_type === "admin" && profile.role && (
+                        {shouldShowRole(profile.role, profile.committee) && (
                           <div>
-                            <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Admin Role</Label>
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.role)}</p>
+                            <Label htmlFor="role" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Roles</Label>
+                            {isEditing && (profile.committee === "Human Resources" || (profile.role && profile.role !== "Not Applicable")) ? (
+                              <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, role: value }))} value={editedProfile.role || ""}>
+                                <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ROLE_OPTIONS.map(option => (
+                                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="text-base font-medium text-gray-800 dark:text-white">
+                                {formatRoles(profile.role, profile.sechead_type, profile.section)}
+                              </p>
+                            )}
                           </div>
                         )}
                         <div>
-                          <Label htmlFor="section" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Section/Voice</Label>
+                          <Label htmlFor="degree_code" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Degree Code</Label>
                           {isEditing ? (
-                            <Input type="text" id="section" name="section" value={editedProfile.section || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                            <Input type="text" id="degree_code" name="degree_code" value={editedProfile.degree_code || ""} onChange={handleInputChange} placeholder="Enter Degree Code" className="w-full text-base dark:bg-gray-700 dark:text-white" />
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.section)}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.degree_code || "N/A"}</p>
                           )}
                         </div>
                         <div>
-                          <Label htmlFor="committee" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Committee</Label>
+                          <Label htmlFor="college" className="text-xs font-semibold text-gray-500 dark:text-gray-400">College</Label>
                           {isEditing ? (
-                            <Input type="text" id="committee" name="committee" value={editedProfile.committee || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                            <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, college: value }))} value={editedProfile.college || ""}>
+                              <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select a college" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COLLEGE_OPTIONS.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatValue(profile.committee)}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.college || "N/A"}</p>
                           )}
                         </div>
                         <div>
-                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Executive Board</Label>
-                          <Badge variant={profile.is_execboard ? "default" : "outline"} className="capitalize">
-                            {profile.is_execboard ? "Yes" : "No"}
-                          </Badge>
+                          <Label htmlFor="membership_status" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Membership Status</Label>
+                          {isEditing ? (
+                            <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, membership_status: value }))} value={editedProfile.membership_status || ""}>
+                              <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select a status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {MEMBERSHIP_STATUS_OPTIONS.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.membership_status || "N/A"}</p>
+                          )}
                         </div>
                         <div>
-                          <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Section Head</Label>
-                          <Badge variant={profile.is_sechead ? "default" : "outline"} className="capitalize">
-                            {profile.is_sechead ? "Yes" : "No"}
-                          </Badge>
+                          <Label htmlFor="current_term_status" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Current Term Status</Label>
+                          {isEditing ? (
+                            <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, current_term_status: value }))} value={editedProfile.current_term_status || ""}>
+                              <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select a status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CURRENT_TERM_STAT_OPTIONS.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.current_term_status || "N/A"}</p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="birthday" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Birthday</Label>
                           {isEditing ? (
                             <Input type="date" id="birthday" name="birthday" value={editedProfile.birthday || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.birthday ? format(new Date(profile.birthday), "MMMM d, yyyy") : "N/A"}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.birthday ? new Date(profile.birthday).toLocaleDateString() : "N/A"}</p>
                           )}
                         </div>
+                        {profile.role !== "Not Applicable" && (
+                          <div>
+                            <Label htmlFor="section" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Voice Section</Label>
+                            {isEditing ? (
+                              <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, section: value }))} value={editedProfile.section || ""}>
+                                <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                  <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {VOICE_SECTION_OPTIONS.map(option => (
+                                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="text-base font-medium text-gray-800 dark:text-white">{profile.section || "N/A"}</p>
+                          )}
+                          </div>
+                        )}
                         <div>
-                          <Label htmlFor="degree_program" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Degree Program</Label>
+                          <Label htmlFor="committee" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Committee</Label>
                           {isEditing ? (
-                            <Input type="text" id="degree_program" name="degree_program" value={editedProfile.degree_program || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                            <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, committee: value }))} value={editedProfile.committee || ""}>
+                              <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select a committee" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COMMITTEE_OPTIONS.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.degree_program || "N/A"}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.committee || "N/A"}</p>
                           )}
                         </div>
                         <div>
                           <Label htmlFor="contact_number" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Contact Number</Label>
                           {isEditing ? (
-                            <Input type="tel" id="contact_number" name="contact_number" value={editedProfile.contact_number || ""} onChange={handleInputChange} className="w-full text-base dark:bg-gray-700 dark:text-white" />
+                            <Input type="number" id="contact_number" name="contact_number" value={editedProfile.contact_number || ""} onChange={handleInputChange} placeholder="Enter Contact Number" className="w-full text-base dark:bg-gray-700 dark:text-white" />
                           ) : (
-                            <p className="text-base font-medium text-gray-800 dark:text-white">{profile.contact_number || "N/A"}</p>
+                            <p className="text-base font-medium text-gray-800 dark:text-white">{formatContactNumber(profile.contact_number)}</p>
                           )}
                         </div>
+                        {isEditing && (profile.committee === "Human Resources" || (profile.role && profile.role !== "Not Applicable")) && (
+                          <div>
+                            <Label htmlFor="sechead_type" className="text-xs font-semibold text-gray-500 dark:text-gray-400">Sechead Type</Label>
+                            <Select onValueChange={(value) => setEditedProfile(prev => ({ ...prev, sechead_type: value }))} value={editedProfile.sechead_type || ""}>
+                              <SelectTrigger className="w-full dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select a type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SECHEAD_TYPE_OPTIONS.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -431,7 +710,7 @@ export default function ProfilePage() {
           </div>
         </main>
 
-        <PageFooter />
+        
       </div>
     </div>
   )

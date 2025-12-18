@@ -1,13 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useState, useEffect } from "react"
 import Image from "next/image"
 
-interface ParallaxGalleryProps {
-  className?: string
-}
-
-export function ParallaxGallery({ className }: ParallaxGalleryProps) {
+export function ParallaxGallery() {
   const [scrollY, setScrollY] = useState(0)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
 

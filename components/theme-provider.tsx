@@ -27,17 +27,28 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "vite-ui-theme",
+  storageKey = "dlsu-chorale-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)
+  const [mounted, setMounted] = useState(false)
 
   // Use useEffect to load the theme from localStorage after component mount
   useEffect(() => {
     const storedTheme = localStorage.getItem(storageKey) as Theme
-    if (storedTheme) {
+    
+    if (storedTheme && storedTheme !== "system") {
       setTheme(storedTheme)
+    } else {
+      // If no stored theme or theme is "system", detect and apply system preference
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+      setTheme("system")
+      // Apply the system theme immediately
+      const root = window.document.documentElement
+      root.classList.remove("light", "dark")
+      root.classList.add(systemTheme)
     }
+    setMounted(true)
   }, [storageKey])
 
   useEffect(() => {
@@ -47,12 +58,29 @@ export function ThemeProvider({
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-
       root.classList.add(systemTheme)
-      return
+    } else {
+      root.classList.add(theme)
     }
+    
+    // Debug: log current classes on root element
+    // console.log("Root element classes:", root.classList.toString())
+  }, [theme])
 
-    root.classList.add(theme)
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      
+      const handleChange = (e: MediaQueryListEvent) => {
+        const root = window.document.documentElement
+        root.classList.remove("light", "dark")
+        root.classList.add(e.matches ? "dark" : "light")
+      }
+
+      mediaQuery.addEventListener("change", handleChange)
+      return () => mediaQuery.removeEventListener("change", handleChange)
+    }
   }, [theme])
 
   const value = {
@@ -60,7 +88,12 @@ export function ThemeProvider({
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
-    },
+    }
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null
   }
 
   return (
